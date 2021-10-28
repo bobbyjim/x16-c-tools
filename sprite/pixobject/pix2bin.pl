@@ -1,4 +1,4 @@
-#!/usr/bin/perl
+#!/usr/bin/env perl
 use strict;
 #
 #  Convert pixobjects to CX16 sprites

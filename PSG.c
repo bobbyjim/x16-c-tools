@@ -39,7 +39,7 @@ int  getTunedNote( unsigned int index )
     return tunedNotes[ index ];
 }
 
-void defineVoice( unsigned int voiceNumber, Voice* voice )
+void runVoice( unsigned int voiceNumber, Voice* voice )
 {
     VERA.control    = 0; // port 0
     VERA.address    = PSG_ADDRESS_VOICE(voiceNumber);
@@ -49,4 +49,6 @@ void defineVoice( unsigned int voiceNumber, Voice* voice )
     VERA.data0 = voice->frequency >> 8;
     VERA.data0 = (3<<6) + voice->volume; //voice->channel  + voice->volume;
     VERA.data0 = voice->waveform + voice->pulseWidth; 
+
+
 }

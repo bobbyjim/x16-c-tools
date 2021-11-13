@@ -1,6 +1,37 @@
 # x16-c-tools
 C programming tools for the X16
 
+# CONTENTS
+
+## Math stuff: 
+1. Burtle's PRNG (two versions) (burtle2.h)
+2. A cheap square-root function (math.h)
+3. A cheap byte-sized TRIG table (img/TRIG)
+
+## Toolchain stuff:
+1. Font-loading function (font.h)
+2. A PSG library (PSG.h)
+3. A sprite library (sprite.h)
+4. A timer library (timer.h)
+
+## Utility stuff:
+1. A Z-Text library (ztext.h)
+
+
+# Font Loader
+This is a trivial function for loading font files into VERA.
+
+# PSG Library
+This has typedefs and functions for setting up and playing tones on VERA.
+It lacks envelopes of course.
+
+# Timer Library
+This is a minimal library for pausing for 1 to 255 jiffies, and 
+for getting the millisecond count from tv_nsec.
+
+# Ztext Library
+This is a Z-text decoder. It can decode from RAM or from a buffer.
+
 # SPRITE TOOLS
 
 main.c demonstrates the use of sprite.h and sprite.c 

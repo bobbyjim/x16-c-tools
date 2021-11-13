@@ -39,9 +39,10 @@ chomp @data;
 my ($name, $bpp, $width, $height) = $header =~ /=(\w+) (4bpp|8bpp)\s+(\d\d?)x(\d\d?)/;
 die "Cannot read header\n" unless $bpp && $width && $height;
 
-my $dimensions = $3 . 'x' . $4;
+my $rows = $4;
+my $cols = $3;
 
-my $outfile = sprintf("%s_%s_%s.bin", $bpp, $name, $dimensions);
+my $outfile = uc sprintf("%s-%d-%02d%1s%02d.bin", $name, $bpp, $cols, 'x', $rows);
 print "===> $outfile <=== $bpp, $width x $height\n";
 
 open my $out, '>', $outfile;
@@ -77,9 +78,10 @@ close $out;
 sub getCharval
 {
     my $c = shift;
+    return 0 if $c eq '.' || $c eq ' ';
+    return 1 if $c eq '*';
     return ord($c)-48 if $c =~ /\d/;        # 0-9
     return ord($c)-55 if $c =~ /[A-Z]/;     # 10-35
     return ord($c)-61 if $c =~ /[a-z]/;     # 35-61 
-    return 1 if $c eq '*';
     return 0; # everything else is a zero
 }

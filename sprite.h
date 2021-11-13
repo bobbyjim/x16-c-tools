@@ -15,12 +15,16 @@
 //   8 x  8 is bits     0000xxxx
 
 #define 	SPRITE_8_BY_8				0
-#define		SPRITE_16_BY_8				(0   +  16)
-#define		SPRITE_16_BY_16				(64  +  16)
-#define		SPRITE_32_BY_8				(0   +  32)
-#define		SPRITE_32_BY_32				(128 +  32)
-#define		SPRITE_64_BY_8				(0   +  48)
-#define		SPRITE_64_BY_64				(192 +  48)
+#define		SPRITE_16_BY_8				(16 + 0  )
+#define		SPRITE_16_BY_16				(16 + 64 )
+#define		SPRITE_16_BY_32				(16 + 128)
+#define		SPRITE_32_BY_8				(32 + 0  )
+#define		SPRITE_32_BY_16				(32 + 64 )
+#define		SPRITE_32_BY_32				(32 + 128)
+#define		SPRITE_64_BY_8				(48 + 0  )
+#define		SPRITE_64_BY_16				(48 + 64 )
+#define		SPRITE_64_BY_32				(48 + 128)
+#define		SPRITE_64_BY_64				(48 + 192)
 
 #define		SPRITE_DISABLED				0
 #define	    SPRITE_LAYER_BACKGROUND		(1 << 2)
@@ -62,9 +66,14 @@ typedef struct {
 } SpriteDefinition;
 
 typedef struct {
-	int x    : 15;
-	int flip : 1;
-	int y    : 15;
+	int x     :15;
+	int xflip :1;
+	int y     :15;
+	int yflip :1;
+
+	int dx;
+	int dy;
+	
 } Position;
 
 /*
@@ -79,7 +88,7 @@ void sprite_loadToVERA(char *filename, uint16_t address);
 void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef);
 void sprite_define_in_bank(uint8_t spritenum, uint8_t sprite_ram_bank_num, SpriteDefinition *sprdef);
 void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef);
-void sprite_pos(uint8_t spritenum, Position* pos);
+void sprite_pos(uint8_t spritenum, Position *pos);
 void sprite_flip(uint8_t spritenum, uint8_t flip);
 void sprite_refresh(uint8_t sprite_ram_bank_num);
 

@@ -29,7 +29,7 @@ char outbuf[256];
 
 void setupScreen()
 {
-   loadFont("img/petfont.bin");
+   loadFont("petfont.bin");
    bgcolor(COLOR_BLACK);
    textcolor(COLOR_GREEN);
 }
@@ -45,9 +45,9 @@ void splash(char *msg)
 
 void setupSprites()
 {
-   sprite_loadToVERA("img/asteroid-4-32x16.bin", 0x4000);
-   sprite_loadToVERA("img/star-4-32x16.bin", 0x4400);
-   sprite_loadToVERA("img/x16-logo-64.bin", 0x5000);
+   sprite_loadToVERA("asteroid-4-32x16.bin", 0x4000);
+   sprite_loadToVERA("star-4-32x16.bin", 0x4400);
+   sprite_loadToVERA("x16-logo-64.bin", 0x5000);
 
    sprdef.mode              = SPRITE_MODE_8BPP;
    sprdef.block             = 0x4000;

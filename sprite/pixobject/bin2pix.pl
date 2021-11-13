@@ -24,14 +24,20 @@ use strict;
 
   What follows is the lines of data.  These values are supported:
 
-  0-9 colors 0-9
-  A-Z colors 10-35
-  a-z colors 36-61
+    0         1111111111222222222233  
+    01234567890123456789012345678901  
+     !"#$%&'()*+,-./0123456789:;<=>?  
 
+    0           1111111111  2222222222  3333333333  4444444444  5555555555  6666666666  7777777777  8888888888  9999999999  0
+    0123456789  0123456789  0123456789  0123456789  0123456789  0123456789  0123456789  0123456789  0123456789  0123456789  0123456789
+    @ABCDEFGHI  JKLMNOPQRS  TUVWXYZ[\]  ^_`abcdefg  hijklmnopq  rstuvwxyz{  |}~¡¢£¤¥¦§  ¨©ª«¬®¯°±²  ³´µ¶·¸¹º»¼  ½¾¿ÀÁÂÃÄÅÆ  ÇÈÉÊËÌÍÎÏÐ
 =cut
 my $bpp    = shift || die "USAGE: $0 <4bpp | 8bpp> <width> <sprite file>\n";
 my $width  = shift || die "USAGE: $0 $bpp <width> <sprite file>\n";
 my $infile = shift || die "USAGE: $0 $bpp $width <sprite file>\n";
+
+my @primaryMap   = split '', ' !"#$%&\'()*+,-./0123456789:;<=>?';
+my @secondaryMap = split '', '@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~¡¢£¤¥¦§¨©ª«¬®¯°±²³´µ¶·¸¹º»¼½¾¿ÀÁÂÃÄÅÆÇÈÉÊËÌÍÎÏÐ'; 
 
 my ($name) = $infile =~ /^(\w+)\./;
 my $line = '';
@@ -73,10 +79,17 @@ EOPIXOBJ
 sub decodeByte
 {
     my $val = shift;
-    return '.' if $val == 0;
-    return '*' if $val == 1;
-    return chr(48+$val) if $val < 10; # '0'..'9'
-    return chr(55+$val) if $val < 36; # 'A'..'Z'
-    return chr(61+$val) if $val < 61; # 'a'..'z'
-    return '.'; # everything else is a dot
+    #
+    #  Here's how we're going to do it.
+    #  Everything from 32 to 255 is on a 7-shade scale.
+    #  We compress that to two shades and we have our mapping.
+    #
+    return $primaryMap[$val] if $val < 32;
+
+    #  It's on a shade scale.
+    my $divisor = 224 / (scalar @secondaryMap);
+
+    $val -= 32;                   # translate to zero
+    $val = int($val / $divisor);  # find our index
+    return $secondaryMap[$val];
 }

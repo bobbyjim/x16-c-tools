@@ -49,7 +49,6 @@ void main()
    cclearxy(0,8,80);
    cclearxy(0,9,80);
 
-   //sprite_loadToVERA("img/tartane-32x32.bin", 0x4000);
    sprite_loadToVERA("img/asteroid-4-32x16.bin", 0x4000);
    sprite_loadToVERA("img/star-4-32x16.bin", 0x4400);
    sprite_loadToVERA("img/x16-logo-64.bin", 0x5000);
@@ -86,14 +85,14 @@ void main()
 
    voice.frequency  = getTunedNote(50);
    voice.channel    = PSG_CHANNEL_BOTH;
-   voice.volume     = PSG_VOLUME_KNOB_4;
+   voice.volume     = PSG_VOLUME_KNOB_11;
    voice.waveform   = PSG_WAVE_NOISE;
    voice.pulseWidth = 0;
-   ADSR_ENVELOPE(1)->attack  = 10;
+   ADSR_ENVELOPE(1)->attack  = 0;
    ADSR_ENVELOPE(1)->decay   = 10;
-   ADSR_ENVELOPE(1)->sustain = 10;
+   ADSR_ENVELOPE(1)->sustain = 0;
    ADSR_ENVELOPE(1)->release = 10;
-   runVoice( 1, &voice );
+   runVoiceWithEnvelope( 1, &voice );
 
    for(;;)
    {

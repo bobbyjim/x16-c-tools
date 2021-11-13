@@ -1,17 +1,8 @@
-
 #include <cx16.h>
+#include <conio.h>
 
 #include "PSG.h"
-
-// typedef struct {
-
-//     int frequency: 16;
-//     int channel:    2;
-//     int volume:     6;
-//     int waveform:   2;
-//     int pulseWidth: 6;
-
-// } Voice;
+#include "timer.h"
 
 int tunedNotes[] = {
 //  C2   , Cs2  , d2    , ds2  , e2   , f2     
@@ -34,12 +25,14 @@ int tunedNotes[] = {
     2809 , 2976 , 3153  , 3340 , 3539 , 3750
 };
 
-int  getTunedNote( unsigned int index )
+int i;
+
+int  getTunedNote( unsigned index )
 {
     return tunedNotes[ index ];
 }
 
-void runVoice( unsigned int voiceNumber, Voice* voice )
+void runVoice( unsigned voiceNumber, Voice* voice )
 {
     VERA.control    = 0; // port 0
     VERA.address    = PSG_ADDRESS_VOICE(voiceNumber);
@@ -49,6 +42,72 @@ void runVoice( unsigned int voiceNumber, Voice* voice )
     VERA.data0 = voice->frequency >> 8;
     VERA.data0 = (3<<6) + voice->volume; //voice->channel  + voice->volume;
     VERA.data0 = voice->waveform + voice->pulseWidth; 
+}
 
+void setVolume( unsigned voiceNumber, Voice* voice )
+{
+    VERA.control = 0;
+    VERA.address = PSG_ADDRESS_VOICE(voiceNumber) + 2; // channel + volume
+    VERA.address_hi = VERA_INC_1 + 1; // from cx16.h
+    VERA.data0 = (3<<6) + voice->volume; //voice->channel  + voice->volume;
+}
 
+#define     HI_RES(x)       (x << 10)
+#define     HI_RES2(x)      (x << 9)
+#define     LO_RES(x)       (x >> 10)
+
+void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
+{
+    unsigned maxVol        = HI_RES(voice->volume);
+    unsigned halfMaxVol    = HI_RES2(voice->volume);
+    unsigned curVolPercent = 0;
+    unsigned deltaPercent;
+
+    voice->volume = 0;
+    runVoice(voiceNumber, voice);
+
+    //
+    //  Attack rise is 0 to volume setting.
+    //
+    deltaPercent = maxVol / (1+ADSR_ENVELOPE(voiceNumber)->attack);
+    for(i=0; i<=ADSR_ENVELOPE(voiceNumber)->attack; ++i)
+    {
+        curVolPercent += deltaPercent;
+//        cprintf("att ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+        voice->volume = LO_RES(curVolPercent);
+        setVolume( voiceNumber, voice );
+        pause_jiffies(1);
+    }
+
+    //
+    //  What is the decay rate??  half volume??
+    //
+    deltaPercent = halfMaxVol / (1+ADSR_ENVELOPE(voiceNumber)->decay);
+    for(i=0; i<=ADSR_ENVELOPE(voiceNumber)->decay; ++i)
+    {
+        curVolPercent -= deltaPercent;
+//        cprintf("dec ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+        voice->volume = LO_RES(curVolPercent);
+        setVolume( voiceNumber, voice );
+        pause_jiffies(1);
+    }
+
+    //
+    //  Sustain is pure time.
+    //
+//    cprintf("sus ----- ----- ----- %05u\r", voice->volume);
+    pause_jiffies( ADSR_ENVELOPE(voiceNumber)->sustain );
+
+    //
+    //  And release is curVolPercent down to zero.
+    //
+    deltaPercent = halfMaxVol / (1+ADSR_ENVELOPE(voiceNumber)->release);
+    for(i=0; i<=ADSR_ENVELOPE(voiceNumber)->release; ++i)
+    {
+        curVolPercent -= deltaPercent;
+//        cprintf("rel ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+        voice->volume = LO_RES(curVolPercent);
+        setVolume( voiceNumber, voice );
+        pause_jiffies(1);
+    }
 }

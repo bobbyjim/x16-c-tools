@@ -52,6 +52,7 @@ typedef struct {
 } Envelope;
 
 void runVoice( unsigned int voiceNumber, Voice* voice );
+void runVoiceWithEnvelope( unsigned int voiceNumber, Voice* voice );
 int  getTunedNote( unsigned int index );
 
 #endif

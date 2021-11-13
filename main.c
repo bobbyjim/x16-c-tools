@@ -27,28 +27,24 @@ unsigned char buf1[8] = { 162, 12, 171, 79, 224, 62, 146, 145 };
 unsigned char buf2[8] = { 137, 34, 79,  58, 46,  76, 244, 201 };
 char outbuf[256];
 
-void main()
+void setupScreen()
 {
-   cbm_k_bsout(CH_FONT_UPPER);
-
-   cprintf( "%s\r\n", decodeZtextbuf( buf1, outbuf ) );
-   cprintf( "%s\r\n", decodeZtextbuf( buf2, outbuf ) );
-
-   cputs("press a key");
-   cgetc();
-
    loadFont("img/petfont.bin");
    bgcolor(COLOR_BLACK);
    textcolor(COLOR_GREEN);
+}
+
+void splash(char *msg)
+{
    clrscr();
-   _randomize();
+   cprintf("\r\n         ***** %s *****\r\n\r\n", msg);
+   cputsxy(8,3," rom version r38");
+   cputsxy(8,5," proof of concept");
+   gotoxy(0,10);
+}
 
-   cputsxy(8,1," **** commander x16 sprite and psg demo ****");
-   cputsxy(8,3," 512 high ram - rom version r38");
-   cputsxy(8,5," 38655 basic bytes free");
-   cclearxy(0,8,80);
-   cclearxy(0,9,80);
-
+void setupSprites()
+{
    sprite_loadToVERA("img/asteroid-4-32x16.bin", 0x4000);
    sprite_loadToVERA("img/star-4-32x16.bin", 0x4400);
    sprite_loadToVERA("img/x16-logo-64.bin", 0x5000);
@@ -82,18 +78,30 @@ void main()
    sprdef.x                = SPRITE_X_SCALE(0);
    sprdef.y                = SPRITE_Y_SCALE(0);
    sprite_define(0, &sprdef);
+}
 
+void demoZtext()
+{
+   cprintf( "\r\n%s\r\n\r\n", decodeZtextbuf( buf1, outbuf ) );
+   cprintf( "\r\n%s\r\n\r\n", decodeZtextbuf( buf2, outbuf ) );
+}
+
+void demoPSG()
+{
    voice.frequency  = getTunedNote(50);
    voice.channel    = PSG_CHANNEL_BOTH;
    voice.volume     = PSG_VOLUME_KNOB_11;
    voice.waveform   = PSG_WAVE_NOISE;
    voice.pulseWidth = 0;
-   ADSR_ENVELOPE(1)->attack  = 0;
-   ADSR_ENVELOPE(1)->decay   = 10;
-   ADSR_ENVELOPE(1)->sustain = 0;
-   ADSR_ENVELOPE(1)->release = 10;
+   ADSR_ENVELOPE(1)->attack  = 300;
+   ADSR_ENVELOPE(1)->decay   = 100;
+   ADSR_ENVELOPE(1)->sustain = 300;
+   ADSR_ENVELOPE(1)->release = 200;
    runVoiceWithEnvelope( 1, &voice );
+}
 
+void demoSprites()
+{
    for(;;)
    {
       for(spritenum = 1; spritenum <= NUM_SPRITES; ++spritenum)
@@ -116,4 +124,23 @@ void main()
 
 //      pause_jiffies(1);
    }
+}
+
+void main()
+{
+   setupScreen();
+   setupSprites();
+
+   splash("demo 1: ztext decoder");
+   demoZtext();
+
+   cputs("press a key");
+   cgetc();
+   _randomize();
+
+   splash("demo 2: psg with adsr envelope");
+   demoPSG();
+
+   splash("demo 3: sprites");
+   demoSprites();
 }

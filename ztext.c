@@ -16,11 +16,12 @@ void decodeZbyte(unsigned char b, char* outbuf)
    if (b == 31) 
    {
       zcase = 1 - zcase;
+      printf( "%2d : * switch case *\n");
    }
    else
    {
       outbuf[outbufpos] = alphabet[zcase][b];
-      printf( "%d: %c\n", outbufpos, outbuf[outbufpos] );
+      printf( "%2d   %2d.%c\n", b, outbufpos, outbuf[outbufpos] );
       ++outbufpos;
    }
 }

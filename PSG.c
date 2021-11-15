@@ -111,3 +111,18 @@ void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
         pause_jiffies(1);
     }
 }
+
+void bang( unsigned frequency )
+{
+   Voice voice;
+   voice.frequency  = frequency;
+   voice.channel    = PSG_CHANNEL_BOTH;
+   voice.volume     = PSG_VOLUME_KNOB_10;
+   voice.waveform   = PSG_WAVE_NOISE;
+   voice.pulseWidth = 0;
+   ADSR_ENVELOPE(1)->attack  = 0;
+   ADSR_ENVELOPE(1)->decay   = 10;
+   ADSR_ENVELOPE(1)->sustain = 0;
+   ADSR_ENVELOPE(1)->release = 10;
+   runVoiceWithEnvelope( 1, &voice );
+}

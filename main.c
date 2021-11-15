@@ -107,6 +107,8 @@ void demoZtext()
 
 void demoPSG()
 {
+   bang(2000);
+   /*
    voice.frequency  = getTunedNote(50);
    voice.channel    = PSG_CHANNEL_BOTH;
    voice.volume     = PSG_VOLUME_KNOB_11;
@@ -117,6 +119,7 @@ void demoPSG()
    ADSR_ENVELOPE(1)->sustain = 80;
    ADSR_ENVELOPE(1)->release = 50;
    runVoiceWithEnvelope( 1, &voice );
+   */
 }
 
 void demoSprites()

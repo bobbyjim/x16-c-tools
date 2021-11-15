@@ -1,6 +1,10 @@
 # x16-c-tools
 C programming tools for the X16
 
+# LIBRARY
+
+The object files are bundled into lib/x16library.lib, and the header files are copied into /include.
+
 # CONTENTS
 
 ## Math stuff: 

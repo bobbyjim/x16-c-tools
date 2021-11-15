@@ -36,7 +36,6 @@
 #define     SPRITE_X_SCALE(x)           (x<<5)
 #define     SPRITE_Y_SCALE(y)           (y<<5)
 
-
 #define		VERA_SPRITE_AREA_BOTTOM		0x4000
 #define		VERA_SPRITE_AREA_TOP		0xcfff
 
@@ -53,7 +52,6 @@
 //  15 bits is an abuse, unless you use it fractionally.
 //  Let's shift it by 5 bits before using it.
 //
-
 typedef struct {
 	uint16_t block; 
 	uint8_t  mode;
@@ -61,35 +59,21 @@ typedef struct {
     uint8_t  layer;
 	uint8_t  dimensions;      
 	int8_t   palette_offset;
-	int      x : 15;
-	int      y : 15;
+	int      x          :15;
+	int		 flip_horiz :1;
+	int      y          :15;
+	int    	 flip_vert  :1;
+	int		 dx;
+	int		 dy;
 } SpriteDefinition;
 
-typedef struct {
-	int x     :15;
-	int xflip :1;
-	int y     :15;
-	int yflip :1;
-
-	int dx;
-	int dy;
-	
-} Position;
-
-/*
-typedef struct {
-	int x;
-	int y;
-} SmallPosition;
-*/
-
 void sprite_loadToVERA(char *filename, uint16_t address);
-
+				 
 void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef);
 void sprite_define_in_bank(uint8_t spritenum, uint8_t sprite_ram_bank_num, SpriteDefinition *sprdef);
 void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef);
-void sprite_pos(uint8_t spritenum, Position *pos);
-void sprite_flip(uint8_t spritenum, uint8_t flip);
+void sprite_pos(uint8_t spritenum, SpriteDefinition *pos);
+void sprite_flip(uint8_t spritenum, SpriteDefinition* pos);
 void sprite_refresh(uint8_t sprite_ram_bank_num);
 
 #endif

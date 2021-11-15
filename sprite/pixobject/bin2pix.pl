@@ -78,6 +78,19 @@ EOPIXOBJ
 
 sub decodeByte
 {
+   my $c = shift;
+
+   return '.' if $c == 0;
+   return '*' if $c == 1;
+   return chr($c+48) if $c < 10;  # '0' .. '9'
+   return chr($c+55) if $c < 36;  # 'A' .. 'Z'
+   return chr($c+61) if $c < 62;  # 'a' .. 'z'
+   return '.'; # everything else is a zero
+}
+
+
+sub decodeByteNew
+{
     my $val = shift;
     #
     #  Here's how we're going to do it.

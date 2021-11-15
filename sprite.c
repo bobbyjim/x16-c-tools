@@ -56,7 +56,7 @@ void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef)
    VERA.data0 = SPRITE_XL(sprdef->x);
    VERA.data0 = SPRITE_YH(sprdef->y);
    VERA.data0 = SPRITE_YL(sprdef->y);
-   VERA.data0 = sprdef->layer;     // leave collision mask and flips alone for now
+   VERA.data0 = sprdef->layer + (sprdef->flip_vert << 1) + sprdef->flip_horiz;     // leave collision mask alone for now
    VERA.data0 = sprdef->dimensions + sprdef->palette_offset;
 }
 
@@ -71,11 +71,11 @@ void sprite_define_in_bank(uint8_t spritenum, uint8_t sprite_ram_bank_num, Sprit
    address[3] = SPRITE_XL(sprdef->x);
    address[4] = SPRITE_YH(sprdef->y);
    address[5] = SPRITE_YL(sprdef->y);
-   address[6] = sprdef->layer;     // leave collision mask and flips alone for now
+   address[6] = sprdef->layer + (sprdef->flip_vert << 1) + sprdef->flip_horiz;     // leave collision mask alone for now
    address[7] = sprdef->dimensions + sprdef->palette_offset;
 }
 
-void sprite_pos(uint8_t spritenum, Position* pos)
+void sprite_pos(uint8_t spritenum, SpriteDefinition* pos)
 {
    //
    //  Set Port 0 to point to sprite x,y registers
@@ -88,10 +88,10 @@ void sprite_pos(uint8_t spritenum, Position* pos)
    VERA.data0 = SPRITE_XL(pos->x);
    VERA.data0 = SPRITE_YH(pos->y);
    VERA.data0 = SPRITE_YL(pos->y);
-//   VERA.data0 ^= pos->flip;
+   VERA.data0 = pos->layer + (pos->flip_vert << 1) + pos->flip_horiz;
 }
 
-void sprite_flip(uint8_t spritenum, uint8_t flip)
+void sprite_flip(uint8_t spritenum, SpriteDefinition* pos)
 {
    //
    //  Set Port 0 to point to sprite x,y registers
@@ -99,7 +99,7 @@ void sprite_flip(uint8_t spritenum, uint8_t flip)
    VERA.control = 0; // port 0
    VERA.address = SPRITE_REGISTERS(spritenum) + 6; // flip
    VERA.address_hi = 1;
-   VERA.data0 ^= (flip & 0x11);
+   VERA.data0 = pos->layer + (pos->flip_vert << 1) + pos->flip_horiz;
 }
 
 void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef)

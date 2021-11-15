@@ -1,0 +1,3 @@
+mkdir lib 
+ar65 r lib/x16tools.lib .obj/*.o
+ar65 d lib/x16tools.lib main.o

@@ -12,15 +12,14 @@
 #include "ztext.h"
 
 #define      VELOCITY           300
-#define      NUM_SPRITES        16
+#define      NUM_ASTEROIDS      8
+#define      NUM_SPRITES        (NUM_ASTEROIDS+1)
 #define      STAR_X             300
 #define      STAR_Y             220
 
-uint8_t spritenum = 1;
-SpriteDefinition sprdef;
+SpriteDefinition sprdef[NUM_SPRITES+1];
+SpriteDefinition* tmp;
 Voice voice;
-Position pos[NUM_SPRITES+1];
-Position *tmp;
 unsigned distance;
 
 unsigned char buf1[8] = { 162, 12, 171, 79, 224, 62, 146, 145 };
@@ -45,39 +44,59 @@ void splash(char *msg)
 
 void setupSprites()
 {
-   sprite_loadToVERA("asteroid-4-32x16.bin", 0x4000);
-   sprite_loadToVERA("star-4-32x16.bin", 0x4400);
-   sprite_loadToVERA("x16-logo-64.bin", 0x5000);
+   uint8_t i;
 
-   sprdef.mode              = SPRITE_MODE_8BPP;
-   sprdef.block             = 0x4000;
-   sprdef.collision_mask    = 0;
-   sprdef.layer             = SPRITE_LAYER_1;
-   sprdef.dimensions        = SPRITE_16_BY_16;
-   sprdef.palette_offset    = 0;
-   sprdef.x                 = SPRITE_X_SCALE(200);
-   sprdef.y                 = SPRITE_Y_SCALE(100);
-
+   sprite_loadToVERA("x16-logo-64.bin",         0x4000);
+   sprite_loadToVERA("asteroid-4-32x16.bin",    0x5000);
+   sprite_loadToVERA("star-4-32x16.bin",        0x5400);
+   sprite_loadToVERA("ship1-8bpp-32x32.bin",    0x5800);
+   sprite_loadToVERA("ship1-8bpp-32x32-22.bin", 0x5c00);
+   sprite_loadToVERA("ship1-8bpp-32x32-45.bin", 0x6000);
+   sprite_loadToVERA("ship1-8bpp-32x32-68.bin", 0x6400);
+   sprite_loadToVERA("ship1-8bpp-32x32-90.bin", 0x6800);
+   
    vera_sprites_enable(1); // cx16.h
-   for (spritenum=1; spritenum<=NUM_SPRITES; ++spritenum)
+
+   //
+   //  Define the asteroid sprites
+   //
+   for (i=1; i<=NUM_ASTEROIDS; ++i)
    {
-      sprite_define(spritenum, &sprdef);
-      pos[spritenum].x  = SPRITE_X_SCALE(100 + rand() % 400);
-      pos[spritenum].y  = SPRITE_Y_SCALE(100 + rand() % 200);
-      pos[spritenum].dx = 4 + rand() % VELOCITY;
-      pos[spritenum].dy = 4 + rand() % VELOCITY;
+      sprdef[i].mode              = SPRITE_MODE_8BPP;
+      sprdef[i].block             = 0x5000;
+      sprdef[i].collision_mask    = 0;
+      sprdef[i].layer             = SPRITE_LAYER_1;
+      sprdef[i].dimensions        = SPRITE_16_BY_16;
+      sprdef[i].palette_offset    = 0;
+      sprdef[i].x                 = SPRITE_X_SCALE(100 + rand() % 400);
+      sprdef[i].y                 = SPRITE_Y_SCALE(100 + rand() % 200);
+      sprdef[i].dx                = 4 + rand() % VELOCITY;
+      sprdef[i].dy                = 4 + rand() % VELOCITY;
+      sprdef[i].flip_horiz        = 1;
+      sprite_define(i, &sprdef[i]);
    }
 
-   sprdef.block            = 0x4400;
-   sprdef.x                 = SPRITE_X_SCALE(STAR_X);
-   sprdef.y                 = SPRITE_Y_SCALE(STAR_Y);
-   sprite_define(127, &sprdef);
+   //
+   //  Define the star sprite
+   //
+   sprdef[0].mode                = SPRITE_MODE_8BPP;
+   sprdef[0].block               = 0x5400;
+   sprdef[0].collision_mask      = 0;
+   sprdef[0].layer               = SPRITE_LAYER_1;
+   sprdef[0].dimensions          = SPRITE_16_BY_16;
+   sprdef[0].palette_offset      = 0;
+   sprdef[0].x                   = SPRITE_X_SCALE(STAR_X);
+   sprdef[0].y                   = SPRITE_Y_SCALE(STAR_Y);
+   sprite_define(127, &sprdef[0]);
 
-   sprdef.block            = 0x5000;
-   sprdef.dimensions       = SPRITE_64_BY_64;
-   sprdef.x                = SPRITE_X_SCALE(0);
-   sprdef.y                = SPRITE_Y_SCALE(0);
-   sprite_define(0, &sprdef);
+   //
+   //  Define the X16 sprite
+   //
+   sprdef[0].block               = 0x4000;
+   sprdef[0].dimensions          = SPRITE_64_BY_64;
+   sprdef[0].x                   = SPRITE_X_SCALE(0);
+   sprdef[0].y                   = SPRITE_Y_SCALE(0);
+   sprite_define(0, &sprdef[0]);
 }
 
 void demoZtext()
@@ -93,33 +112,38 @@ void demoPSG()
    voice.volume     = PSG_VOLUME_KNOB_11;
    voice.waveform   = PSG_WAVE_NOISE;
    voice.pulseWidth = 0;
-   ADSR_ENVELOPE(1)->attack  = 300;
-   ADSR_ENVELOPE(1)->decay   = 100;
-   ADSR_ENVELOPE(1)->sustain = 300;
-   ADSR_ENVELOPE(1)->release = 200;
+   ADSR_ENVELOPE(1)->attack  = 10;
+   ADSR_ENVELOPE(1)->decay   = 50;
+   ADSR_ENVELOPE(1)->sustain = 80;
+   ADSR_ENVELOPE(1)->release = 50;
    runVoiceWithEnvelope( 1, &voice );
 }
 
 void demoSprites()
 {
+   uint8_t i;
+
    for(;;)
    {
-      for(spritenum = 1; spritenum <= NUM_SPRITES; ++spritenum)
+      for(i = 1; i <= NUM_ASTEROIDS; ++i)
       {
-         tmp = &pos[spritenum];
-         sprite_pos(spritenum, tmp);
+         tmp = &sprdef[i];
+         sprite_pos(i, tmp);
          tmp->x += tmp->dx >> 4;
          tmp->y += tmp->dy >> 4;
 
 //         distance = usqrt4((tmp->x - STAR_X) * (tmp->x - STAR_X)
 //                  + (tmp->y - STAR_Y) * (tmp->y - STAR_Y));
 
-
          if (tmp->x < SPRITE_X_SCALE(STAR_X)) tmp->dx++;
          if (tmp->x > SPRITE_X_SCALE(STAR_X)) tmp->dx--;
          if (tmp->y < SPRITE_Y_SCALE(STAR_Y)) tmp->dy++;
          if (tmp->y > SPRITE_Y_SCALE(STAR_Y)) tmp->dy--;
 
+         if (tmp->dx < 0) tmp->flip_horiz = 1;
+         if (tmp->dx > 0) tmp->flip_horiz = 0;
+         if (tmp->dy < 0) tmp->flip_vert  = 0;
+         if (tmp->dy > 0) tmp->flip_vert  = 1;
       }
 
 //      pause_jiffies(1);

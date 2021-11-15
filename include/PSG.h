@@ -51,8 +51,9 @@ typedef struct {
     int release    :16;
 } Envelope;
 
-void runVoice( unsigned int voiceNumber, Voice* voice );
-void runVoiceWithEnvelope( unsigned int voiceNumber, Voice* voice );
-int  getTunedNote( unsigned int index );
+void runVoice( unsigned voiceNumber, Voice* voice );
+void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice );
+int  getTunedNote( unsigned index );
+void bang(unsigned frequency);
 
 #endif

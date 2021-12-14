@@ -1,5 +1,9 @@
 mkdir lib 2>/dev/null
-ar65 r lib/x16tools.lib .obj/*.o
-ar65 d lib/x16tools.lib main.o
+ar65 r lib/spritex16.lib .obj/sprite.o
+ar65 r lib/psgx16.lib    .obj/PSG.o
+ar65 r lib/mathx16.lib   .obj/math.o
+ar65 r lib/timerx16.lib  .obj/timer.o
+ar65 r lib/ztextx16.lib  .obj/ztext.o
+ar65 r lib/fontx16.lib   .obj/font.o
 mkdir include 2>/dev/null
 cp *.h include

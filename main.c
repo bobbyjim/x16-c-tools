@@ -12,7 +12,7 @@
 #include "ztext.h"
 
 #define      VELOCITY           300
-#define      NUM_ASTEROIDS      8
+#define      NUM_ASTEROIDS      2
 #define      NUM_SPRITES        (NUM_ASTEROIDS+1)
 #define      STAR_X             300
 #define      STAR_Y             220
@@ -48,7 +48,7 @@ void setupSprites()
 
    sprite_loadToVERA("x16-logo-64.bin",         0x4000);
    sprite_loadToVERA("asteroid-4-32x16.bin",    0x5000);
-   sprite_loadToVERA("star-4-32x16.bin",        0x5400);
+   sprite_loadToVERA("star-4-32x16.bin",        0x5200);
    sprite_loadToVERA("ship1-8bpp-32x32.bin",    0x5800);
    sprite_loadToVERA("ship1-8bpp-32x32-22.bin", 0x5c00);
    sprite_loadToVERA("ship1-8bpp-32x32-45.bin", 0x6000);
@@ -80,9 +80,9 @@ void setupSprites()
    //  Define the star sprite
    //
    sprdef[0].mode                = SPRITE_MODE_8BPP;
-   sprdef[0].block               = 0x5400;
+   sprdef[0].block               = 0x5200;
    sprdef[0].collision_mask      = 0;
-   sprdef[0].layer               = SPRITE_LAYER_1;
+   sprdef[0].layer               = SPRITE_LAYER_0;
    sprdef[0].dimensions          = SPRITE_16_BY_16;
    sprdef[0].palette_offset      = 0;
    sprdef[0].x                   = SPRITE_X_SCALE(STAR_X);
@@ -97,6 +97,16 @@ void setupSprites()
    sprdef[0].x                   = SPRITE_X_SCALE(0);
    sprdef[0].y                   = SPRITE_Y_SCALE(0);
    sprite_define(0, &sprdef[0]);
+
+   //
+   //  Define the ship sprite
+   //
+   sprdef[0].block               = 0x5c00;
+   sprdef[0].dimensions          = SPRITE_32_BY_32;
+   sprdef[0].layer               = SPRITE_LAYER_0;
+   sprdef[0].x                   = SPRITE_X_SCALE(100);
+   sprdef[0].y                   = SPRITE_Y_SCALE(100);
+   sprite_define(10, &sprdef[0]);
 }
 
 void demoZtext()
@@ -139,17 +149,44 @@ void demoSprites()
 //                  + (tmp->y - STAR_Y) * (tmp->y - STAR_Y));
 
          if (tmp->x < SPRITE_X_SCALE(STAR_X)) tmp->dx++;
-         if (tmp->x > SPRITE_X_SCALE(STAR_X)) tmp->dx--;
+         else if (tmp->x > SPRITE_X_SCALE(STAR_X)) tmp->dx--;
          if (tmp->y < SPRITE_Y_SCALE(STAR_Y)) tmp->dy++;
-         if (tmp->y > SPRITE_Y_SCALE(STAR_Y)) tmp->dy--;
+         else if (tmp->y > SPRITE_Y_SCALE(STAR_Y)) tmp->dy--;
 
          if (tmp->dx < 0) tmp->flip_horiz = 1;
-         if (tmp->dx > 0) tmp->flip_horiz = 0;
+         else if (tmp->dx > 0) tmp->flip_horiz = 0;
          if (tmp->dy < 0) tmp->flip_vert  = 0;
-         if (tmp->dy > 0) tmp->flip_vert  = 1;
+         else if (tmp->dy > 0) tmp->flip_vert  = 1;
       }
 
-//      pause_jiffies(1);
+      // Update ship
+      tmp = &sprdef[0];
+      sprite_pos(10, tmp);
+      tmp->x += tmp->dx;
+      tmp->y += tmp->dy;
+      if (kbhit()) switch (cgetc())
+      {
+         case 'w': 
+            if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy--;
+            if (tmp->dy < 0) tmp->flip_vert  = 0;
+            break;
+         case 's': 
+            if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy++;
+            if (tmp->dy > 0) tmp->flip_vert  = 1;
+            break;
+         case 'a':
+            if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx--;
+            if (tmp->dx < 0) tmp->flip_horiz = 1;
+            break; 
+         case 'd':
+            if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx++;
+            if (tmp->dx > 0) tmp->flip_horiz = 0;
+            break;
+         default: 
+            break;
+      }
+
+      pause_jiffies(1);
    }
 }
 

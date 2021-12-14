@@ -17,16 +17,11 @@ void sprite_loadToVERA(char *filename, uint16_t address)
 }
 
 /*
- *  Copies 1K of sprite_ram_bank_num into VERA starting at 1FC00. 
+ *  Copies 1K of the *** current *** RAM bank into VERA starting at 1FC00. 
  */
-void sprite_refresh(uint8_t sprite_ram_bank_num)
+void sprite_refresh()
 {
    unsigned char* sourceAddress = ((unsigned char *)0xa000);
-   //
-   //  Point to our source bank
-   //
-   RAM_BANK = sprite_ram_bank_num;
-
    //
    //  Set Port 0 to point to sprite register
    //
@@ -60,11 +55,13 @@ void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef)
    VERA.data0 = sprdef->dimensions + sprdef->palette_offset;
 }
 
-void sprite_define_in_bank(uint8_t spritenum, uint8_t sprite_ram_bank_num, SpriteDefinition *sprdef)
+//
+//  Create sprite definition in the *** current *** RAM bank.
+//
+void sprite_define_in_bank(uint8_t spritenum, SpriteDefinition *sprdef)
 {
    unsigned char *address = ((unsigned char *)(0xa000 + spritenum * 8));
-   RAM_BANK = sprite_ram_bank_num;
-
+ 
    address[0] = SPRITE_BLOCK_LO(sprdef->block); // lower 8 bits here
    address[1] = sprdef->mode + SPRITE_BLOCK_HI(sprdef->block);  // upper 4 bits in the lower nybble here
    address[2] = SPRITE_XH(sprdef->x);

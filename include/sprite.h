@@ -13,7 +13,7 @@
 //  16 x 16 is bits     0101xxxx
 //  16 x  8 is bits     0001xxxx
 //   8 x  8 is bits     0000xxxx
-
+//
 #define 	SPRITE_8_BY_8				0
 #define		SPRITE_16_BY_8				(16 + 0  )
 #define		SPRITE_16_BY_16				(16 + 64 )
@@ -70,10 +70,10 @@ typedef struct {
 void sprite_loadToVERA(char *filename, uint16_t address);
 				 
 void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef);
-void sprite_define_in_bank(uint8_t spritenum, uint8_t sprite_ram_bank_num, SpriteDefinition *sprdef);
+void sprite_define_in_bank(uint8_t spritenum, SpriteDefinition *sprdef);
 void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef);
 void sprite_pos(uint8_t spritenum, SpriteDefinition *pos);
 void sprite_flip(uint8_t spritenum, SpriteDefinition* pos);
-void sprite_refresh(uint8_t sprite_ram_bank_num);
+void sprite_refresh();
 
 #endif

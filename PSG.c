@@ -1,5 +1,5 @@
 #include <cx16.h>
-#include <conio.h>
+//#include <conio.h>
 
 #include "PSG.h"
 #include "timer.h"
@@ -73,7 +73,7 @@ void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
     for(i=0; i<=ADSR_ENVELOPE(voiceNumber)->attack; ++i)
     {
         curVolPercent += deltaPercent;
-        cprintf("att ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+//        cprintf("att ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
         voice->volume = LO_RES(curVolPercent);
         setVolume( voiceNumber, voice );
         pause_jiffies(1);
@@ -86,7 +86,7 @@ void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
     for(i=0; i<=ADSR_ENVELOPE(voiceNumber)->decay; ++i)
     {
         curVolPercent -= deltaPercent;
-        cprintf("dec ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+//        cprintf("dec ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
         voice->volume = LO_RES(curVolPercent);
         setVolume( voiceNumber, voice );
         pause_jiffies(1);
@@ -95,7 +95,7 @@ void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
     //
     //  Sustain is pure time.
     //
-    cprintf("sus ----- ----- ----- %05u\r", voice->volume);
+//    cprintf("sus ----- ----- ----- %05u\r", voice->volume);
     pause_jiffies( ADSR_ENVELOPE(voiceNumber)->sustain );
 
     //
@@ -105,7 +105,7 @@ void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice )
     for(i=0; i<ADSR_ENVELOPE(voiceNumber)->release; ++i)
     {
         curVolPercent -= deltaPercent;
-        cprintf("rel ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
+//        cprintf("rel ----- %05u %05u %05u\r", deltaPercent, curVolPercent, voice->volume);
         voice->volume = LO_RES(curVolPercent);
         setVolume( voiceNumber, voice );
         pause_jiffies(1);

@@ -2,7 +2,7 @@
 #include <string.h>
 #include <peekpoke.h>
 
-#include "ztext.h"
+#include "utext.h"
 
 /*
    Decode a VERY constrained subset of ASCII:
@@ -23,7 +23,7 @@ unsigned char zcase = 0;
 unsigned char outbufpos = 0;
 unsigned char b0, b1, b2, b3, b4, b5;
 
-void decodeZbyte(unsigned char b, char* outbuf) 
+void decodeUbyte(unsigned char b, char* outbuf) 
 {
    if (b == 31) 
    {
@@ -38,7 +38,7 @@ void decodeZbyte(unsigned char b, char* outbuf)
    }
 }
 
-char* decodeZtext(unsigned startLoc, char* outbuf)
+char* decodeUtext(unsigned startLoc, char* outbuf)
 {
    b5 = 0;
    outbufpos = 0;
@@ -53,16 +53,16 @@ char* decodeZtext(unsigned startLoc, char* outbuf)
       b4 = (b1 & 127)/4;
       b5 = (b1/128);
   
-      decodeZbyte(b2, outbuf);    
-      decodeZbyte(b3, outbuf);    
-      decodeZbyte(b4, outbuf);    
+      decodeUbyte(b2, outbuf);    
+      decodeUbyte(b3, outbuf);    
+      decodeUbyte(b4, outbuf);    
    }
 
    outbuf[outbufpos] = 0; // terminate string
    return outbuf;
 }
 
-char* decodeZtextbuf(unsigned char *buf, char* outbuf)
+char* decodeUtextbuf(unsigned char *buf, char* outbuf)
 {
    unsigned char loc;
    outbufpos = 0;
@@ -77,9 +77,9 @@ char* decodeZtextbuf(unsigned char *buf, char* outbuf)
       b4 = (b1 & 127)/4;
       b5 = (b1/128);
 
-      decodeZbyte(b2, outbuf);
-      decodeZbyte(b3, outbuf);
-      decodeZbyte(b4, outbuf);
+      decodeUbyte(b2, outbuf);
+      decodeUbyte(b3, outbuf);
+      decodeUbyte(b4, outbuf);
 
       if (b5 == 1) break;
    }
@@ -95,10 +95,10 @@ void main()
    char buf2[8] = { 137, 34, 79,  58, 46,  76, 244, 201 };
    char outbuf[256];
 
-   decodeZtextbuf( buf1, outbuf );
+   decodeUtextbuf( buf1, outbuf );
    printf( "%s\n", outbuf );
 
-   decodeZtextbuf( buf2, outbuf );
+   decodeUtextbuf( buf2, outbuf );
    printf( "%s\n", outbuf );
 }
 */

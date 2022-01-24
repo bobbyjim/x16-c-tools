@@ -9,7 +9,7 @@
 #include "timer.h"
 #include "font.h"
 #include "math.h"
-#include "ztext.h"
+#include "utext.h"
 
 #define      VELOCITY           300
 #define      NUM_ASTEROIDS      2
@@ -111,8 +111,8 @@ void setupSprites()
 
 void demoZtext()
 {
-   cprintf( "\r\n%s\r\n\r\n", decodeZtextbuf( buf1, outbuf ) );
-   cprintf( "\r\n%s\r\n\r\n", decodeZtextbuf( buf2, outbuf ) );
+   cprintf( "\r\n%s\r\n\r\n", decodeUtextbuf( buf1, outbuf ) );
+   cprintf( "\r\n%s\r\n\r\n", decodeUtextbuf( buf2, outbuf ) );
 }
 
 void demoPSG()

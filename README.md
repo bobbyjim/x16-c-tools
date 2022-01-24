@@ -1,5 +1,5 @@
 # x16-c-tools
-C programming tools for the X16
+Programming tools for the X16
 
 # LIBRARY
 
@@ -23,8 +23,8 @@ A library for creating and moving sprites around.
 This is a minimal library for pausing for 1 to 255 jiffies, and 
 for getting the millisecond count from tv_nsec.
 
-# ztextx16.lib (ztext.h)
-This is a Z-text decoder. It can decode from RAM or from a buffer.
+# utextx16.lib (utext.h)
+This is similar to a Z-text decoder. It can decode from RAM or from a buffer.
 
 # SPRITE TOOLS
 
@@ -70,3 +70,27 @@ Pixobjects are limited, but useful in that they are easy to edit.
 The /sprite/pixobject folder contains two utilities: pix2bin.pl, which converts
 a pixobject to a directly loadable binary sprite file, and bin2pix.pl, which takes
 a sprite binary file and creates a pixobject from it.
+
+The pixobject file format is an elementary raster image storage format.
+It consists of:
+
+    1. A header line, containing the object's name, its bits per pixel, and its dimensions.
+    2. Data lines following.  Hexadecimal digits are interpreted properly.  
+
+    Values from 0 up to 61 are handled as 0-9, A-Z, and a-z.
+    The "*" character represents a simple "on" or white value.
+    The " " character represents a simple "off" or black value.
+
+A full 8 bit range of values are not handled.
+
+Example:
+
+    house1 4bpp 16x8
+
+
+         ******    
+       **********        
+     **************
+       **********
+       *** ** ***   
+       ****** ***   

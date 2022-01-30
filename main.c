@@ -12,7 +12,7 @@
 #include "utext.h"
 
 #define      VELOCITY           300
-#define      NUM_ASTEROIDS      2
+#define      NUM_ASTEROIDS      1
 #define      NUM_SPRITES        (NUM_ASTEROIDS+1)
 #define      STAR_X             300
 #define      STAR_Y             220
@@ -20,7 +20,7 @@
 SpriteDefinition sprdef[NUM_SPRITES+1];
 SpriteDefinition* tmp;
 Voice voice;
-unsigned distance;
+long distance;
 
 unsigned char buf1[8] = { 162, 12, 171, 79, 224, 62, 146, 145 };
 unsigned char buf2[8] = { 137, 34, 79,  58, 46,  76, 244, 201 };
@@ -135,7 +135,13 @@ void demoPSG()
 void demoSprites()
 {
    uint8_t i;
+   int x_pull;
+   int y_pull;
+   int x_delta;
+   int y_delta;
 
+   sprdef[1].dx = 400;
+   sprdef[1].dy = -100;
    for(;;)
    {
       for(i = 1; i <= NUM_ASTEROIDS; ++i)
@@ -145,13 +151,20 @@ void demoSprites()
          tmp->x += tmp->dx >> 4;
          tmp->y += tmp->dy >> 4;
 
-//         distance = usqrt4((tmp->x - STAR_X) * (tmp->x - STAR_X)
-//                  + (tmp->y - STAR_Y) * (tmp->y - STAR_Y));
+         x_delta = (tmp->x >> 5) - STAR_X;
+         y_delta = (tmp->y >> 5) - STAR_Y;
 
-         if (tmp->x < SPRITE_X_SCALE(STAR_X)) tmp->dx++;
-         else if (tmp->x > SPRITE_X_SCALE(STAR_X)) tmp->dx--;
-         if (tmp->y < SPRITE_Y_SCALE(STAR_Y)) tmp->dy++;
-         else if (tmp->y > SPRITE_Y_SCALE(STAR_Y)) tmp->dy--;
+         distance =         (square( x_delta >> 3))
+                         +  (square( y_delta >> 3));
+
+         x_pull = -signedSquare(x_delta) / distance;
+         y_pull = -signedSquare(y_delta) / distance;
+
+//         gotoxy(0,15);
+//         cprintf("pull(x,y): %4d, %4d", x_pull >> 3, y_pull >> 3);
+
+         tmp->dx += x_pull >> 4;
+         tmp->dy += y_pull >> 4;
 
          if (tmp->dx < 0) tmp->flip_horiz = 1;
          else if (tmp->dx > 0) tmp->flip_horiz = 0;

@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #include "math.h"
 
 /* static will allow inlining */
@@ -14,4 +16,14 @@
     b = val / a; a = (a+b) /2;
 
     return a;
+}
+
+long square(int val)
+{
+    return val * val;
+}
+
+long signedSquare(int val)
+{
+    return val * abs(val);
 }

@@ -4,5 +4,6 @@
 /*static*/ unsigned usqrt4(unsigned val);
 long square(int val);
 long signedSquare(int val);
+long cube(int val);
 
 #endif

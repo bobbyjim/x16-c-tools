@@ -20,7 +20,6 @@
 SpriteDefinition sprdef[NUM_SPRITES+1];
 SpriteDefinition* tmp;
 Voice voice;
-long distance;
 
 unsigned char buf1[8] = { 162, 12, 171, 79, 224, 62, 146, 145 };
 unsigned char buf2[8] = { 137, 34, 79,  58, 46,  76, 244, 201 };
@@ -68,10 +67,8 @@ void setupSprites()
       sprdef[i].layer             = SPRITE_LAYER_1;
       sprdef[i].dimensions        = SPRITE_16_BY_16;
       sprdef[i].palette_offset    = 0;
-      sprdef[i].x                 = SPRITE_X_SCALE(100 + rand() % 400);
-      sprdef[i].y                 = SPRITE_Y_SCALE(100 + rand() % 200);
-      sprdef[i].dx                = 4 + rand() % VELOCITY;
-      sprdef[i].dy                = 4 + rand() % VELOCITY;
+      sprdef[i].x                 = SPRITE_X_SCALE(rand() % 550);
+      sprdef[i].y                 = SPRITE_Y_SCALE(rand() % 450);
       sprdef[i].flip_horiz        = 1;
       sprite_define(i, &sprdef[i]);
    }
@@ -118,88 +115,76 @@ void demoZtext()
 void demoPSG()
 {
    bang(2000);
-   /*
-   voice.frequency  = getTunedNote(50);
-   voice.channel    = PSG_CHANNEL_BOTH;
-   voice.volume     = PSG_VOLUME_KNOB_11;
-   voice.waveform   = PSG_WAVE_NOISE;
-   voice.pulseWidth = 0;
-   ADSR_ENVELOPE(1)->attack  = 10;
-   ADSR_ENVELOPE(1)->decay   = 50;
-   ADSR_ENVELOPE(1)->sustain = 80;
-   ADSR_ENVELOPE(1)->release = 50;
-   runVoiceWithEnvelope( 1, &voice );
-   */
+}
+
+int x_delta, y_delta;
+
+void gravity(uint8_t spritenum, SpriteDefinition* obj)
+{
+   sprite_pos(spritenum, obj);
+   obj->x += obj->dx >> 4;
+   obj->y += obj->dy >> 4;
+
+   //
+   // deltas range -320 to +320.
+   //
+   x_delta = (obj->x >> 5) - STAR_X; 
+   y_delta = (obj->y >> 5) - STAR_Y;
+
+   //
+   // downshift to pull slower
+   //
+   obj->dx -= x_delta >> 6;
+   obj->dy -= y_delta >> 6; 
+
+   //
+   // flip the sprite if necessary
+   //
+   obj->flip_horiz = (obj->dx < 0);
+   obj->flip_vert  = (obj->dy > 0);
 }
 
 void demoSprites()
 {
    uint8_t i;
-   int x_pull;
-   int y_pull;
-   int x_delta;
-   int y_delta;
 
-   sprdef[1].dx = 400;
-   sprdef[1].dy = -100;
+   for(i=1; i<= NUM_ASTEROIDS; ++i)
+   {
+      sprdef[i].dx = -rand() % 1000;
+      sprdef[i].dy = -rand() % 100;
+   }
+
    for(;;)
    {
       for(i = 1; i <= NUM_ASTEROIDS; ++i)
       {
-         tmp = &sprdef[i];
-         sprite_pos(i, tmp);
-         tmp->x += tmp->dx >> 4;
-         tmp->y += tmp->dy >> 4;
-
-         x_delta = (tmp->x >> 5) - STAR_X;
-         y_delta = (tmp->y >> 5) - STAR_Y;
-
-         distance =         (square( x_delta >> 3))
-                         +  (square( y_delta >> 3));
-
-         x_pull = -signedSquare(x_delta) / distance;
-         y_pull = -signedSquare(y_delta) / distance;
-
-//         gotoxy(0,15);
-//         cprintf("pull(x,y): %4d, %4d", x_pull >> 3, y_pull >> 3);
-
-         tmp->dx += x_pull >> 4;
-         tmp->dy += y_pull >> 4;
-
-         if (tmp->dx < 0) tmp->flip_horiz = 1;
-         else if (tmp->dx > 0) tmp->flip_horiz = 0;
-         if (tmp->dy < 0) tmp->flip_vert  = 0;
-         else if (tmp->dy > 0) tmp->flip_vert  = 1;
+         gravity(i, &sprdef[i]);
       }
 
       // Update ship
+
       tmp = &sprdef[0];
-      sprite_pos(10, tmp);
-      tmp->x += tmp->dx;
-      tmp->y += tmp->dy;
+      gravity(10, tmp);
+
       if (kbhit()) switch (cgetc())
       {
          case 'w': 
-            if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy--;
-            if (tmp->dy < 0) tmp->flip_vert  = 0;
+            if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy -= 32;
             break;
          case 's': 
-            if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy++;
-            if (tmp->dy > 0) tmp->flip_vert  = 1;
+            if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy += 32;
             break;
          case 'a':
-            if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx--;
-            if (tmp->dx < 0) tmp->flip_horiz = 1;
+            if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx -= 32;
             break; 
          case 'd':
-            if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx++;
-            if (tmp->dx > 0) tmp->flip_horiz = 0;
+            if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx += 32;
             break;
          default: 
             break;
       }
 
-      pause_jiffies(1);
+      pause_jiffies(2);
    }
 }
 

@@ -14,19 +14,24 @@
 //  16 x  8 is bits     0001xxxx
 //   8 x  8 is bits     0000xxxx
 //
-#define 	SPRITE_8_BY_8				0
+#define 	SPRITE_8_BY_8				  0
+#define		SPRITE_8_BY_16				( 0 + 64 )
+#define		SPRITE_8_BY_32				( 0 + 128)
+#define		SPRITE_8_BY_64				( 0 + 192)
 #define		SPRITE_16_BY_8				(16 + 0  )
 #define		SPRITE_16_BY_16				(16 + 64 )
 #define		SPRITE_16_BY_32				(16 + 128)
+#define		SPRITE_16_BY_64				(16 + 192)
 #define		SPRITE_32_BY_8				(32 + 0  )
 #define		SPRITE_32_BY_16				(32 + 64 )
 #define		SPRITE_32_BY_32				(32 + 128)
+#define		SPRITE_32_BY_64				(32 + 192)
 #define		SPRITE_64_BY_8				(48 + 0  )
 #define		SPRITE_64_BY_16				(48 + 64 )
 #define		SPRITE_64_BY_32				(48 + 128)
 #define		SPRITE_64_BY_64				(48 + 192)
 
-#define		SPRITE_DISABLED				0
+#define		SPRITE_DISABLED				 0
 #define	    SPRITE_LAYER_BACKGROUND		(1 << 2)
 #define		SPRITE_LAYER_0				(2 << 2)
 #define		SPRITE_LAYER_1				(3 << 2)

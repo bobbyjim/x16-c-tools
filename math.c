@@ -27,3 +27,9 @@ long signedSquare(int val)
 {
     return val * abs(val);
 }
+
+long cube(int val)
+{
+    return val * val * val;
+}
+

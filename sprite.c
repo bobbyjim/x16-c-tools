@@ -55,23 +55,6 @@ void sprite_define(uint8_t spritenum, SpriteDefinition *sprdef)
    VERA.data0 = sprdef->dimensions + sprdef->palette_offset;
 }
 
-//
-//  Create sprite definition in the *** current *** RAM bank.
-//
-void sprite_define_in_bank(uint8_t spritenum, SpriteDefinition *sprdef)
-{
-   unsigned char *address = ((unsigned char *)(0xa000 + spritenum * 8));
- 
-   address[0] = SPRITE_BLOCK_LO(sprdef->block); // lower 8 bits here
-   address[1] = sprdef->mode + SPRITE_BLOCK_HI(sprdef->block);  // upper 4 bits in the lower nybble here
-   address[2] = SPRITE_XH(sprdef->x);
-   address[3] = SPRITE_XL(sprdef->x);
-   address[4] = SPRITE_YH(sprdef->y);
-   address[5] = SPRITE_YL(sprdef->y);
-   address[6] = sprdef->layer + (sprdef->flip_vert << 1) + sprdef->flip_horiz;     // leave collision mask alone for now
-   address[7] = sprdef->dimensions + sprdef->palette_offset;
-}
-
 void sprite_pos(uint8_t spritenum, SpriteDefinition* pos)
 {
    //

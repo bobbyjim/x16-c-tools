@@ -79,5 +79,6 @@ void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef);
 void sprite_pos(uint8_t spritenum, SpriteDefinition *pos);
 void sprite_flip(uint8_t spritenum, SpriteDefinition* pos);
 void sprite_refresh();
+void sprite_disable(uint8_t spriteNum);
 
 #endif

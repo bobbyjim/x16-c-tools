@@ -42,6 +42,7 @@ char* decodeUtext(unsigned startLoc, char* outbuf)
 {
    b5 = 0;
    outbufpos = 0;
+   zcase = 0;
 
    for(; b5 == 0; startLoc += 2)
    {
@@ -65,7 +66,8 @@ char* decodeUtext(unsigned startLoc, char* outbuf)
 char* decodeUtextbuf(unsigned char *buf, char* outbuf)
 {
    unsigned char loc;
-   outbufpos = 0;
+   outbufpos = 0; // used by decodeUbyte
+   zcase = 0;     // used by decodeUbyte
 
    for(loc=0; loc<strlen(buf); loc += 2)
    {
@@ -87,6 +89,39 @@ char* decodeUtextbuf(unsigned char *buf, char* outbuf)
    outbuf[outbufpos] = 0; // terminate string
    return outbuf;
 }
+
+typedef union {
+   unsigned int encoded;
+   typedef struct {
+      int b0     :5;
+      int b1     :5;
+      int b2     :5;
+      int parity :1;
+   } AsBytes;
+} Converter;
+
+// void encodeUtext(char* src, unsigned char* outbuf)
+// {
+//    unsigned char loc;
+//    unsigned char uvalue;
+//    zcase     = 0;
+//    unsigned char bufpos = 0;
+//    unsigned char buf[256];
+
+//    // Convert to 5-bit bytes
+//    for(loc=0; loc<strlen(src); loc += 2)
+//    {
+//       if (!alphabet[zcase][src[loc]]) // switch case
+//       {
+//          zcase = 1 - zcase;
+//          buf[bufpos] = 31;
+//          ++bufpos;
+//       }
+//       buf[bufpos] = alphabet[zcase][src[loc]];
+//    }
+//
+//    // Now compress those bytes
+// }
 
 /*
 void main()

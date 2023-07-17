@@ -94,3 +94,14 @@ void sprite_changeBlock(uint8_t spritenum, SpriteDefinition *sprdef)
    VERA.data0 = SPRITE_BLOCK_LO(sprdef->block); // lower 8 bits here
    VERA.data0 = sprdef->mode + SPRITE_BLOCK_HI(sprdef->block);  // upper 4 bits in the lower nybble here
 }
+
+void sprite_disable(uint8_t spritenum)
+{
+   //
+   //  Set Port 0 to point to sprite x,y registers
+   //
+   VERA.control = 0; // port 0
+   VERA.address = SPRITE_REGISTERS(spritenum) + 6; // layer
+   VERA.address_hi = 1;
+   VERA.data0 = 0;
+}

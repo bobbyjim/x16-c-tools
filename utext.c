@@ -90,14 +90,16 @@ char* decodeUtextbuf(unsigned char *buf, char* outbuf)
    return outbuf;
 }
 
-typedef union {
-   unsigned int encoded;
-   typedef struct {
+typedef struct {
       int b0     :5;
       int b1     :5;
       int b2     :5;
       int parity :1;
-   } AsBytes;
+} ThreeByteCode;
+
+typedef union {
+   unsigned int encoded;
+   ThreeByteCode asBytes;
 } Converter;
 
 // void encodeUtext(char* src, unsigned char* outbuf)

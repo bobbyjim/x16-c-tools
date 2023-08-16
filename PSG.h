@@ -22,6 +22,7 @@
 #define     PSG_VOLUME_KNOB_2       11
 #define     PSG_VOLUME_KNOB_1       6
 #define     PSG_VOLUME_KNOB_0       0
+#define     PSG_VOLUME_OFF          0
 
 #define     PSG_WAVE_PULSE          0
 #define     PSG_WAVE_SAWTOOTH       64
@@ -55,5 +56,7 @@ void runVoice( unsigned voiceNumber, Voice* voice );
 void runVoiceWithEnvelope( unsigned voiceNumber, Voice* voice );
 int  getTunedNote( unsigned index );
 void bang(unsigned frequency);
+void ping(unsigned frequency);
+void pluck(unsigned frequency);
 
 #endif

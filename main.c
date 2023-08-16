@@ -17,6 +17,12 @@
 #define      STAR_X             300
 #define      STAR_Y             220
 
+#define      SHIP_0             0x5800
+#define      SHIP_22            0x5c00
+#define      SHIP_45            0x6000
+#define      SHIP_68            0x6400
+#define      SHIP_90            0x6800
+
 SpriteDefinition sprdef[NUM_SPRITES+1];
 SpriteDefinition* tmp;
 Voice voice;
@@ -52,7 +58,7 @@ void setupSprites()
    sprite_loadToVERA("ship1-8bpp-32x32-22.bin", 0x5c00);
    sprite_loadToVERA("ship1-8bpp-32x32-45.bin", 0x6000);
    sprite_loadToVERA("ship1-8bpp-32x32-68.bin", 0x6400);
-   sprite_loadToVERA("ship1-8bpp-32x32-90.bin", 0x6800);
+   sprite_loadToVERA("ship1-8bpp-32x32-90b.bin", 0x6800);
    
    vera_sprites_enable(1); // cx16.h
 
@@ -98,7 +104,7 @@ void setupSprites()
    //
    //  Define the ship sprite
    //
-   sprdef[0].block               = 0x5c00;
+   sprdef[0].block               = SHIP_0;
    sprdef[0].dimensions          = SPRITE_32_BY_32;
    sprdef[0].layer               = SPRITE_LAYER_0;
    sprdef[0].x                   = SPRITE_X_SCALE(100);
@@ -108,13 +114,13 @@ void setupSprites()
 
 void demoZtext()
 {
-   cprintf( "\r\n%s\r\n\r\n", decodeUtextbuf( buf1, outbuf ) );
-   cprintf( "\r\n%s\r\n\r\n", decodeUtextbuf( buf2, outbuf ) );
+   cprintf( "text 1 (8 bytes packed): %s\r\n\r\n", decodeUtextbuf( buf1, outbuf ) );
+   cprintf( "text 2 (8 bytes packed): %s\r\n\r\n", decodeUtextbuf( buf2, outbuf ) );
 }
 
 void demoPSG()
 {
-   bang(2000);
+   pluck(2000);
 }
 
 int x_delta, y_delta;
@@ -136,12 +142,6 @@ void gravity(uint8_t spritenum, SpriteDefinition* obj)
    //
    obj->dx -= x_delta >> 6;
    obj->dy -= y_delta >> 6; 
-
-   //
-   // flip the sprite if necessary
-   //
-   obj->flip_horiz = (obj->dx < 0);
-   obj->flip_vert  = (obj->dy > 0);
 }
 
 void demoSprites()
@@ -154,6 +154,8 @@ void demoSprites()
       sprdef[i].dy = -rand() % 100;
    }
 
+   tmp = &sprdef[0];
+
    for(;;)
    {
       for(i = 1; i <= NUM_ASTEROIDS; ++i)
@@ -163,22 +165,33 @@ void demoSprites()
 
       // Update ship
 
-      tmp = &sprdef[0];
       gravity(10, tmp);
 
       if (kbhit()) switch (cgetc())
       {
          case 'w': 
             if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy -= 32;
+            tmp->block = SHIP_0;
+            tmp->flip_vert = 0;
+            sprite_changeBlock( 10, tmp );
             break;
          case 's': 
             if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy += 32;
+            tmp->block = SHIP_0;
+            tmp->flip_vert = 1;
+            sprite_changeBlock( 10, tmp );
             break;
          case 'a':
             if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx -= 32;
+            tmp->block = SHIP_90;
+            tmp->flip_horiz = 1;
+            sprite_changeBlock( 10, tmp );
             break; 
          case 'd':
             if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx += 32;
+            tmp->block = SHIP_90;
+            tmp->flip_horiz = 0;
+            sprite_changeBlock( 10, tmp );
             break;
          default: 
             break;

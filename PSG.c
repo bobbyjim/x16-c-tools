@@ -158,3 +158,15 @@ void pluck( unsigned frequency )
    ADSR_ENVELOPE(1)->release = 10;
    runVoiceWithEnvelope( 1, &voice );
 }
+
+void waves(unsigned frequency)
+{
+    Voice voice;
+    voice.frequency  = frequency;
+    voice.channel    = PSG_CHANNEL_BOTH;
+    voice.volume     = PSG_VOLUME_KNOB_6;
+    voice.waveform   = PSG_WAVE_NOISE;
+    runVoice( 1, &voice );
+    //voice.frequency = frequency + 8000;
+    //runVoice( 2, &voice );
+}

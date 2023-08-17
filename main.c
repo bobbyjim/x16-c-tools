@@ -120,7 +120,31 @@ void demoZtext()
 
 void demoPSG()
 {
-   pluck(2000);
+   ping(8000);
+
+   // This sounds a lot like sea travel in 7 Cities of Gold.
+
+//   unsigned i = 30000;
+//   unsigned char backwards = 0;
+//   unsigned lowpoint = 4000;
+//   unsigned highpoint = 30000;
+//
+//   cprintf("press a key to exit psg demo");
+//   while(!kbhit())
+//   {
+//      if (backwards) i -= 2;
+//      else i += 1;
+//
+//      waves(i);
+//      if ( i > highpoint ) {
+//         backwards = 1;
+//         lowpoint = 2000 + rand() / 10;
+//      }
+//      if ( i < lowpoint ) {
+//         backwards = 0;
+//         highpoint = 10000 + rand() / 2;
+//      }
+//   }
 }
 
 int x_delta, y_delta;
@@ -144,9 +168,65 @@ void gravity(uint8_t spritenum, SpriteDefinition* obj)
    obj->dy -= y_delta >> 6; 
 }
 
+void show_ship(uint8_t spriteNum, SpriteDefinition* obj, uint8_t ship_facing)
+{
+   switch(ship_facing)
+   {
+      case 0:   obj->block = SHIP_0;           obj->flip_horiz = 0;         obj->flip_vert  = 0;     break;
+      case 1:   obj->block = SHIP_22;          obj->flip_horiz = 0;         obj->flip_vert  = 0;     break;
+      case 2:   obj->block = SHIP_45;          obj->flip_horiz = 0;         obj->flip_vert  = 0;     break;
+      case 3:   obj->block = SHIP_68;          obj->flip_horiz = 0;         obj->flip_vert  = 0;     break;
+      case 4:   obj->block = SHIP_90;          obj->flip_horiz = 0;         obj->flip_vert  = 0;     break;
+      case 5:   obj->block = SHIP_68;          obj->flip_horiz = 0;         obj->flip_vert  = 1;     break;
+      case 6:   obj->block = SHIP_45;          obj->flip_horiz = 0;         obj->flip_vert  = 1;     break;
+      case 7:   obj->block = SHIP_22;          obj->flip_horiz = 0;         obj->flip_vert  = 1;     break;
+      case 8:   obj->block = SHIP_0;           obj->flip_horiz = 0;         obj->flip_vert  = 1;     break;
+      case 9:   obj->block = SHIP_22;          obj->flip_horiz = 1;         obj->flip_vert  = 1;     break;
+      case 10:  obj->block = SHIP_45;          obj->flip_horiz = 1;         obj->flip_vert  = 1;     break;
+      case 11:  obj->block = SHIP_68;          obj->flip_horiz = 1;         obj->flip_vert  = 1;     break;
+      case 12:  obj->block = SHIP_90;          obj->flip_horiz = 1;         obj->flip_vert  = 1;     break;
+      case 13:  obj->block = SHIP_68;          obj->flip_horiz = 1;         obj->flip_vert  = 0;     break;
+      case 14:  obj->block = SHIP_45;          obj->flip_horiz = 1;         obj->flip_vert  = 0;     break;
+      case 15:
+      default:  obj->block = SHIP_22;          obj->flip_horiz = 1;         obj->flip_vert  = 0;     break;
+   }
+   sprite_changeBlock( spriteNum, obj );
+}
+
+void accelerate_ship(uint8_t spriteNum, SpriteDefinition* obj, uint8_t ship_facing)
+{
+   int dx = 0, dy = 0;
+
+   switch(ship_facing)
+   {
+      default:
+      case  0: dx =    0; dy =  -32; break; // 0
+      case  1: dx =   11; dy =  -29; break; // 22
+      case  2: dx =   22; dy =  -22; break; // 45
+      case  3: dx =   29; dy =  -11; break; // 68
+      case  4: dx =   31; dy =    0; break; // 90
+      case  5: dx =   29; dy =   11; break; // 112
+      case  6: dx =   22; dy =   22; break; // 135
+      case  7: dx =   11; dy =   29; break; // 158
+      case  8: dx =    0; dy =   31; break; // 180
+      case  9: dx =  -11; dy =   29; break; // 202
+      case 10: dx =  -22; dy =   22; break; // 225
+      case 11: dx =  -29; dy =   11; break; // 248
+      case 12: dx =  -31; dy =    0; break; // 270
+      case 13: dx =  -29; dy =  -11; break; // 292
+      case 14: dx =  -22; dy =  -22; break; // 315
+      case 15: dx =  -11; dy =  -29; break; // 338
+   }
+   if ( dy < 0 && obj->y > SPRITE_Y_SCALE(0))   obj->dy += dy;
+   if ( dy > 0 && obj->y < SPRITE_Y_SCALE(500)) obj->dy += dy;
+   if ( dx < 0 && obj->x > SPRITE_X_SCALE(0))   obj->dx += dx;
+   if ( dx > 0 && obj->x < SPRITE_X_SCALE(500)) obj->dx += dx;
+}
+
 void demoSprites()
 {
    uint8_t i;
+   uint8_t ship_angle = 0;
 
    for(i=1; i<= NUM_ASTEROIDS; ++i)
    {
@@ -165,36 +245,36 @@ void demoSprites()
 
       // Update ship
 
+      show_ship(10, tmp, ship_angle);
       gravity(10, tmp);
 
       if (kbhit()) switch (cgetc())
       {
-         case 'w': 
-            if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy -= 32;
-            tmp->block = SHIP_0;
-            tmp->flip_vert = 0;
-            sprite_changeBlock( 10, tmp );
-            break;
-         case 's': 
-            if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy += 32;
-            tmp->block = SHIP_0;
-            tmp->flip_vert = 1;
-            sprite_changeBlock( 10, tmp );
-            break;
          case 'a':
-            if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx -= 32;
-            tmp->block = SHIP_90;
-            tmp->flip_horiz = 1;
-            sprite_changeBlock( 10, tmp );
-            break; 
+            if (ship_angle == 0) ship_angle = 16;
+            --ship_angle;
+            break;
          case 'd':
-            if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx += 32;
-            tmp->block = SHIP_90;
-            tmp->flip_horiz = 0;
-            sprite_changeBlock( 10, tmp );
+            ++ship_angle;
+            if (ship_angle == 16) ship_angle = 0;
             break;
-         default: 
+         case ' ':
+            accelerate_ship(10, tmp, ship_angle);
             break;
+//         case 'w': 
+//            if (tmp->y > SPRITE_Y_SCALE(0)) tmp->dy -= 32;
+//            break;
+//         case 's': 
+//            if (tmp->y < SPRITE_Y_SCALE(500)) tmp->dy += 32;
+//            break;
+//         case 'a':
+//            if (tmp->x > SPRITE_X_SCALE(0)) tmp->dx -= 32;
+//            break; 
+//         case 'd':
+//            if (tmp->x < SPRITE_X_SCALE(500)) tmp->dx += 32;
+//            break;
+//         default: 
+//            break;
       }
 
       pause_jiffies(2);

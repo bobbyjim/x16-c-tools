@@ -66,11 +66,9 @@ PSG_VOLUME		= PSG_CHANNEL + 2
 	sta $9F25
 .endmacro
 
-
 .org $0400
 ;.org $9000							; Alternative memory location
 .segment "CODE"
-
 
 ;*******************************************************************************
 ; ENTRY SECTION

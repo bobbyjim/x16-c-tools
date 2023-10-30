@@ -1,0 +1,1 @@
+cl65 -t cx16 -o ADSRTEST.PRG adsrtest.c common.c test1.c test3.c test4.c ../lib/psgx16.lib ../lib/timerx16.lib

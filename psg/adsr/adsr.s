@@ -153,7 +153,7 @@ Play:
 	lda frequency+1
 	sta VERA_DATA0
 	lda volume+1
-	ora #%11000000
+	ora #%11000000						; stereo channel
 	sta VERA_DATA0						; starting Volume  = volume
 	lda waveform
 	sta VERA_DATA0						; set waveform

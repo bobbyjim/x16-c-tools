@@ -71,7 +71,7 @@ PSG_CHANNEL_LO				= $C0
 	ldx #3
 @loop:
 	lda volume,x 
-    ora #%11000000    ; L/R channel	
+    ora #%11000000    ; L/R channel	(#192)
 	sta VERA_DATA0
 	dex
 	bpl @loop

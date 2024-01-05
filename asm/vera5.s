@@ -99,31 +99,34 @@ envelope_state: 	.addr state_idle
 					.addr state_release
 
 handler:
-	jsr run_state
+	jsr run_states
 handler_update_volumes:
 	jsr update_volumes
     jmp (default_irq_vector) ; done
 
-run_state:
+run_states:
 	ldx #0
 	lda state,x
-	tax
+	phx						; push X
+	tax						; clobber x
 	jmp (envelope_state,x)
 	rts
 
 state_idle:
+	plx       				; pop X
 	rts
 
 state_attack:
-    ldx #0
+    ;ldx #0
+	plx       				; pop X
 	lda volume,x
 	cmp #63
 	beq @state_attack_done  ; done 
 	lda volume_fractional,x ; not done
-	adc attack_fractional,x ; vol.lo++
+	adc attack_fractional,x ; vol.lo+=
 	sta volume_fractional,x
 	lda volume,x
-	adc attack,x			; vol.hi++
+	adc attack,x			; vol.hi+=
 	sta volume,x
 	rts
 @state_attack_done:
@@ -132,15 +135,16 @@ state_attack:
 	rts
 
 state_decay:
-    ldx #0
+    ;ldx #0
+	plx       				; pop X
 	lda volume,x
 	cmp sustain_level,x
 	beq @state_decay_done   ; done
 	lda volume_fractional,x ; not done
-	sbc decay_fractional,x  ; vol.lo--
+	sbc decay_fractional,x  ; vol.lo-=
 	sta volume_fractional,x
 	lda volume,x
-	sbc decay,x				; vol.hi--
+	sbc decay,x				; vol.hi-=
 	sta volume,x
 	rts 
 @state_decay_done:
@@ -150,15 +154,16 @@ state_decay:
 	rts
 
 state_sustain:
-    ldx #0
+    ;ldx #0
+	plx       				; pop X
 	lda sustain_counter,x
 	cmp sustain_target,x
 	beq @state_sustain_done	; done
 	lda sustain_counter_fractional,x ; not done
-	adc sustain_timer_fractional,x   ; counter.lo++
+	adc sustain_timer_fractional,x   ; counter.lo+=
 	sta sustain_counter_fractional,x
 	lda sustain_counter,x
-	adc sustain_timer,x				 ; counter.hi++
+	adc sustain_timer,x				 ; counter.hi+=
 	sta sustain_counter,x
 	rts
 @state_sustain_done:
@@ -167,20 +172,20 @@ state_sustain:
 	rts
 
 state_release:
-    ldx #0
+    ;ldx #0
+	plx       				; pop X
 	lda volume,x
 	cmp #0
 	beq @state_release_done  ; done
 	lda volume_fractional,x  ; not done
-	sbc release_fractional,x ; vol.lo--
+	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x
 	lda volume,x
-	sbc release,x            ; vol.hi--
+	sbc release,x            ; vol.hi-=
 	sta volume,x
 	rts
 @state_release_done:
-	lda #0
-	sta state,x 
+	stz state,x 			 ; idle
 	rts
 
 update_volumes:
@@ -191,8 +196,9 @@ update_volumes:
 	sta VERA_addr_high
 	lda #<VRAM_psg_vol
 	sta VERA_addr_low
-	ldx #0					; update PSG volume
-	lda volume,x
+
+	ldx #0					
+	lda volume,x			; update PSG volume
 	ora #%11000000			; stereo
 	sta VERA_data0
 	rts

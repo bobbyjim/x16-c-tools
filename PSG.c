@@ -1,6 +1,4 @@
 #include <cx16.h>
-//#include <conio.h>
-
 #include "PSG.h"
 #include "timer.h"
 

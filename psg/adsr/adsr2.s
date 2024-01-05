@@ -9,6 +9,12 @@
 ; Compiler:		CC65
 ; Build using:	cl65 -t cx16 adsr2.s -C cx16-asm.cfg -o ADSR2.PRG
 
+.org $0400
+.segment "STARTUP"
+.segment "INIT"
+.segment "ONCE"
+.segment "CODE"
+
 R0				= $02        ; the 16 bit ABI registers
 
 VERA_LOW		= $9F20
@@ -33,10 +39,10 @@ PSG_VOLUME		= PSG_CHANNEL + 2
 	sei 								; insert new IRQ player
 	lda IRQ_VECTOR
 	sta OLD_IRQ_HANDLER
-    lda #<Play
-    sta IRQ_VECTOR
     lda IRQ_VECTOR+1
     sta OLD_IRQ_HANDLER+1
+    lda #<Play
+    sta IRQ_VECTOR
     lda #>Play
     sta IRQ_VECTOR+1
     cli
@@ -65,10 +71,6 @@ PSG_VOLUME		= PSG_CHANNEL + 2
 	lda data_store+3
 	sta $9F25
 .endmacro
-
-.org $0400
-;.org $9000							; Alternative memory location
-.segment "CODE"
 
 ;*******************************************************************************
 ; ENTRY SECTION

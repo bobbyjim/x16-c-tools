@@ -197,7 +197,7 @@ unsigned char test32_Decay3()
 
 	setABI( &adsr );
 
-	r.pc =  0x62f;  // (decay)  was: ADDR_RUN_ENV;
+	r.pc =  ADDR_RUN_DECAY;  // was: ADDR_RUN_ENV;
 	r.flags = 0;
 
     //dumpABI();

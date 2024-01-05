@@ -27,6 +27,21 @@ void dumpABI()
 	cputs( "\r\n" );
 }
 
+char log[80];
+
+void rememberABI()
+{
+//	unsigned char index = 16;
+
+//    sprintf( target, "   " );
+//	while(index--)
+//	{
+//		sprintf( target, "%2x ", ABI[index] );
+//	}
+//	cputs( "\r\n" );
+}
+
+
 void clearStruct( ADSR *adsr )
 {
 	int i = 15;
@@ -35,7 +50,7 @@ void clearStruct( ADSR *adsr )
 
 void clearABI() 
 {
-	int i = 15;
+	unsigned char i = 15;
 	while(i--) ABI[i] = 0;
 }
 

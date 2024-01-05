@@ -42,7 +42,7 @@ void splash(char *msg)
 {
    clrscr();
    cprintf("\r\n         ***** %s *****\r\n\r\n", msg);
-   cputsxy(8,3," rom version r38");
+   cputsxy(8,3," rom version r46");
    cputsxy(8,5," proof of concept");
    gotoxy(0,10);
 }

@@ -2,6 +2,10 @@
 #define _ADSR_TEST_H_
 
 #define	ABI				((unsigned char *)0x02)
+#define ABI_STATE		ABI[0]
+#define ABI_VOL_LO		ABI[1]
+#define ABI_VOL_HI		ABI[2]
+
 #define ADSR_DATA		((unsigned char *)0x0412)
 
 #define	ADDR_RESET_ENV		0x0400
@@ -10,7 +14,13 @@
 #define ADDR_SAVE_ABI		0x0409
 #define ADDR_LOAD_ABI		0x040c
 #define ADDR_UPDATE_ABI		0x040f
-// #define ADDR_INSTALLER		0x0412
+#define ADDR_INSTALLER		0x04f2
+
+// these values change when the asm changes
+#define ADDR_RUN_DECAY			0x062f
+#define ADDR_RUN_SUSTAIN		0x064c
+#define ADDR_RUN_RELEASE		0x065a
+
 
 typedef struct 
 {
@@ -40,6 +50,7 @@ typedef union
 
 void dumpADSRmemory();
 void dumpABI();
+void rememberABI();
 
 void clearStruct( ADSR *adsr );
 void clearABI();

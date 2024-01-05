@@ -5,13 +5,16 @@
  */
 #include <conio.h>
 
-//#include "PSG.h"
 #include "test1.h"
 #include "test3.h"
 #include "test4.h"
+#include "test5.h"
+
+unsigned char all_pass = 1;
 
 void processResult( unsigned char ok, char *name )
 {
+	if (!ok) all_pass = 0;
 	cprintf( "   %-4s : %s\r\n", ok? "ok" : "FAIL", name );
 }
 
@@ -19,8 +22,6 @@ char abiBuf[80];
 
 void main() 
 {
-	//Voice voice;
-	
 	clrscr();
 	cputs("\r\n      ADSR TEST SUITE\r\n\r\n");
 
@@ -45,20 +46,13 @@ void main()
 	// check the trigger from ATT to SUS.
 
     // check RLS
-	processResult( test41_Rel1(), "test RLS 1");
-	processResult( test41_Rel2(), "test RLS 2");
-	processResult( test41_Rel3(), "test RLS 3");
+	processResult( test41_Rel1(), "test RLS 1 - reduce vol hi");
+	processResult( test41_Rel2(), "test RLS 2 - 16 bit sub");
+	processResult( test41_Rel3(), "test RLS 3 - state transition");
 
-	// jmp env_run 	  ; $0403
-	// jmp player 	  ; $0406
-	// installer      ; $0412
 
-/*
-	voice.frequency = 600;
-	voice.channel   = PSG_CHANNEL_BOTH;
-	voice.volume    = 50;
-	voice.waveform  = PSG_WAVE_NOISE;
-
-	runVoice( 0, &voice );
-*/
+	if (all_pass == 1)
+	{
+		processResult( test51_boom(), "test BOOM" );
+	}
 }

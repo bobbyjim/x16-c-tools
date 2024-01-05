@@ -1,91 +1,74 @@
-; ADSR Envelope Manager for One Voice
-; Author:		Rob Eaglestone
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+; ADSR Envelope Manager by Rob Eaglestone
 ;
 ; Adapted from:
-;    Simplest Sound Effects Library for BASIC Programs
-;    Author:		Dusan Strakl
-;    More Info:	https://www.8bitcoding.com/p/simplest-sound-effects-library-for.html
+;    Simplest Sound Effects Library for BASIC Programs, by Dusan Strakl
+;    https://www.8bitcoding.com/p/simplest-sound-effects-library-for.html
 ;
 ;
-; System:		Commander X16
-; Version:		Emulator R.41
-; Compiler:		CC65
-; Build using:	cl65 -t cx16 adsr3.s -C cx16-asm.cfg -o ADSR3.PRG
+; Commander X16 R.46
+; Build using CC65:	cl65 -t cx16 adsr3.s -C cx16-asm.cfg -o ADSR3.PRG
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+.org $0400
+.segment "STARTUP"
+.segment "INIT"
+.segment "ONCE"
+.segment "CODE"
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
 ;   PSG Code
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-VERA_LOW					= $9F20
-VERA_MID					= $9F21
-VERA_HIGH					= $9F22
-VERA_DATA0					= $9F23
-VERA_CTRL					= $9f25
-PSG_CHANNEL_LO				= $C0
+VERA_addr_low		= $9f20
+VERA_addr_high		= $9f21
+VERA_addr_bank		= $9f22
+VERA_data0			= $9f23
+VERA_ctrl			= $9f25
+
+VERA_voice_3_vol	= $1f9ce
 
 .macro SAVE_VERA_REGISTERS
-	lda VERA_LOW
+	lda VERA_addr_low
 	sta data_store
-	lda VERA_MID
+	lda VERA_addr_high
 	sta data_store+1
-	lda VERA_HIGH
+	lda VERA_addr_bank
 	sta data_store+2
-	lda VERA_CTRL
+	lda VERA_ctrl
 	sta data_store+3
 .endmacro
 
 .macro RESTORE_VERA_REGISTERS
 	lda data_store
-	sta VERA_LOW
+	sta VERA_addr_low
 	lda data_store+1
-	sta VERA_MID
+	sta VERA_addr_high
 	lda data_store+2
-	sta VERA_HIGH
+	sta VERA_addr_bank
 	lda data_store+3
-	sta VERA_CTRL
+	sta VERA_ctrl
 .endmacro
 
 .macro WRITE_VOLUMES
-	;
-	; set data to channel 0
-	;
-	stz VERA_CTRL
-
-    ;
-	; write current volume levels into channels 0-3 (descending order)
-	;
-	; stride = 4
-	; direction = negative
-	; VRAM bank = 1
-	;
-    lda #($30 | $08 | $01)
-	sta VERA_HIGH
-	lda #$f9 
-	sta VERA_MID 
-	;
-	; start with volume register of channel 3
-	; 
-	lda #($C0 + (4 * 3) + 2) 
-	sta VERA_LOW
+	stz VERA_ctrl
+	; stride = -4
+    lda #($30 | $08 | ^VERA_voice_3_vol)
+	sta VERA_addr_bank
+	lda #<VERA_voice_3_vol 
+	sta VERA_addr_high 
+	lda #>VERA_voice_3_vol
+	sta VERA_addr_low
 	ldx #3
 @loop:
 	lda volume,x 
     ora #%11000000    ; L/R channel	
-	sta VERA_DATA0
+	sta VERA_data0
 	dex
 	bpl @loop
 .endmacro
-
-.org $0400
-;.org $9000							; Alternative memory location
-.segment "CODE"
-
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;
-;  Jump table
-;
-;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;
@@ -98,8 +81,6 @@ OLD_IRQ_HANDLER 			= $06
 install:
 	lda system_is_installed		
 	bne installed				
-
-	; do the actual "installation" 
 	sei									; 1 byte
 	lda IRQ_VECTOR						; 3 bytes
 	sta OLD_IRQ_HANDLER					; 3 bytes
@@ -112,7 +93,6 @@ install:
     cli									; 1 byte
 	lda #1
 	sta system_is_installed
-
 installed:
 	rts
 
@@ -121,7 +101,7 @@ installed:
 ;  variables
 ;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-data_store:				.res 4,0			; R = $0421
+data_store:				.res 4,0			; R
 system_is_installed:	.byte 0				; R+4
 system_has_work:		.byte 1				; R+5
 
@@ -156,7 +136,7 @@ sustain_timer_lo:		.byte 0, 0, 0, 0    ; R+58
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 player:
 	lda system_has_work
-	beq player_done   				;  0 = NOT running
+	beq player_done   		;  0 = NOT running
     SAVE_VERA_REGISTERS
     ldx #00	
 	jsr try_envelope
@@ -223,11 +203,6 @@ prepare_sustain:
 try_sustain:
     cmp #03
 	bne try_release
-	;
-	; implement sustain how?
-	; timer?
-	; yeah it must just be a timer.  I guess.
-	;
 	dec sustain_timer_lo,x 
 	lda sustain_timer_lo,x 
 	beq sustain_rollover

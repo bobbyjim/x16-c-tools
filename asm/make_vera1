@@ -1,0 +1,1 @@
+cl65 -t cx16 vera1.s -C cx16-asm.cfg -o VERA1.PRG

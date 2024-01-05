@@ -1,0 +1,1 @@
+cl65 -t cx16 count.s -C cx16-asm.cfg -o COUNT.PRG

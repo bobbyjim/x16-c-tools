@@ -12,27 +12,30 @@ VERA_addr_bank	= $9f22
 VERA_data0		= $9f23
 VERA_data1		= $9f24
 VERA_ctrl		= $9f25
-VRAM_psg		= $1f9c0	; VRAM Addresses
+VRAM_psg_voice0	= $1f9c0	; VRAM Addresses
+VRAM_psg_voice1	= $1f9c4	
+VRAM_psg_voice2	= $1f9c8
+VRAM_psg_voice3	= $1f9cc	
 VRAM_psg_vol	= $1f9c2
 MIDDLE_C		= 702		; Frequency
 IRQVec          = $0314		; RAM Interrupt Vector
 
-; globals
-state:              		.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-volume: 					.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-volume_fractional:			.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-attack:             		.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-attack_fractional:  		.byte  99, 99,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-decay:						.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-decay_fractional:			.byte  99, 99,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_level:				.byte  40, 40,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_target:				.byte   5,  5,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_counter:			.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_counter_fractional:	.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_timer:      		.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-sustain_timer_fractional: 	.byte   8,  8,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-release:            		.byte   1,  2,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
-release_fractional: 		.byte   0,  0,  0,  0,  0,0,0,0, 0,0,0,0, 0,0,0,0
+; envelope variables.        Voice  0   1   2   3
+state:              		.byte   0,  0,  0,  0
+volume: 					.byte   0,  0,  0,  0
+volume_fractional:			.byte   0,  0,  0,  0
+attack:             		.byte   0,  0,  0,  0
+attack_fractional:  		.byte  90, 80, 70, 60
+decay:						.byte   0,  0,  0,  0
+decay_fractional:			.byte  60, 70, 80, 90
+sustain_level:				.byte  40, 45, 50, 55
+sustain_target:				.byte   5,  6,  7,  8
+sustain_counter:			.byte   0,  0,  0,  0
+sustain_counter_fractional:	.byte   0,  0,  0,  0
+sustain_timer:      		.byte   0,  0,  0,  0
+sustain_timer_fractional: 	.byte   8,  7,  6,  5
+release:            		.byte   1,  2,  3,  1
+release_fractional: 		.byte   0,  0,  0,  0
 
 default_irq_vector: .addr 0
 is_installed: 		.byte 0
@@ -63,11 +66,12 @@ set_up_test_tone:
     inc is_initialized
 
 	stz VERA_ctrl
-	lda #($10 | ^VRAM_psg)
+
+	lda #($10 | ^VRAM_psg_voice2)
 	sta VERA_addr_bank
-	lda #>VRAM_psg
+	lda #>VRAM_psg_voice2
 	sta VERA_addr_high
-	lda #<VRAM_psg
+	lda #<VRAM_psg_voice2
 	sta VERA_addr_low
 	lda #<MIDDLE_C
 	sta VERA_data0
@@ -82,8 +86,8 @@ set_up_test_tone:
 	rts
 
 set_test_volume:
-	ldx #0					; Voice 0
-	lda #30					; Low vol
+	ldx #2					; Voice 
+	lda #32					; Vol at about 50%
 	sta volume,x
 	lda #$ff
 	sta volume_fractional,x
@@ -97,27 +101,19 @@ envelope_state: 	.addr state_idle
 					.addr state_sustain
 					.addr state_release
 
+;----------------------------------------
 handler:
 	jsr run_states
-handler_update_volumes:
 	jsr update_volumes
     jmp (default_irq_vector) ; done
-
-run_states:
-	ldx #0
-	lda state,x
-	phx						; push X
-	tax						; clobber x
-	jmp (envelope_state,x)
-	rts
+;----------------------------------------
 
 state_idle:
-	plx       				; pop X
-	rts
+	plx       				; pop Voice X
+	bra return_from_jump
 
 state_attack:
-    ;ldx #0
-	plx       				; pop X
+	plx       				; pop Voice X
 	lda volume,x
 	cmp #63
 	beq @state_attack_done  ; done 
@@ -127,15 +123,14 @@ state_attack:
 	lda volume,x
 	adc attack,x			; vol.hi+=
 	sta volume,x
-	rts
+	bra return_from_jump
 @state_attack_done:
 	lda #4
 	sta state,x 
-	rts
+	bra return_from_jump
 
 state_decay:
-    ;ldx #0
-	plx       				; pop X
+	plx       				; pop Voice X
 	lda volume,x
 	cmp sustain_level,x
 	beq @state_decay_done   ; done
@@ -145,16 +140,31 @@ state_decay:
 	lda volume,x
 	sbc decay,x				; vol.hi-=
 	sta volume,x
-	rts 
+	bra return_from_jump 
 @state_decay_done:
 	lda #6
 	sta state,x 
 	stz sustain_counter,x ; set up sustain
+	bra return_from_jump 
+
+;------------------------------------------
+;  Run States
+;------------------------------------------
+run_states:
+	ldx #3
+run_states_loop:
+	lda state,x
+	phx						; push Voice X
+	tax						; clobber X
+	jmp (envelope_state,x)
+return_from_jump:
+	; X ought to be restored at this point
+	dex
+	bpl run_states_loop
 	rts
 
 state_sustain:
-    ;ldx #0
-	plx       				; pop X
+	plx       				; pop Voice X
 	lda sustain_counter,x
 	cmp sustain_target,x
 	beq @state_sustain_done	; done
@@ -164,40 +174,48 @@ state_sustain:
 	lda sustain_counter,x
 	adc sustain_timer,x				 ; counter.hi+=
 	sta sustain_counter,x
-	rts
+	bra return_from_jump 
 @state_sustain_done:
 	lda #8
 	sta state,x 
-	rts
+	bra return_from_jump 
 
 state_release:
-    ;ldx #0
-	plx       				; pop X
+	plx       				; pop Voice X
 	lda volume,x
 	cmp #0
 	beq @state_release_done  ; done
+	cmp release,x
+	bmi @state_release_done  ; done
 	lda volume_fractional,x  ; not done
 	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x
 	lda volume,x
 	sbc release,x            ; vol.hi-=
 	sta volume,x
-	rts
+	bra return_from_jump 
 @state_release_done:
+	stz volume,x
 	stz state,x 			 ; idle
-	rts
+	bra return_from_jump 
 
+;------------------------------------------
+;  Update Volumes
+;------------------------------------------
 update_volumes:
-	stz VERA_ctrl			; set to volume register
-	lda #^VRAM_psg_vol		; stride = 0
+	stz VERA_ctrl			       ; set to volume register
+	lda #($30 | $08 | ^VRAM_psg_voice3)  ; stride = -4
 	sta VERA_addr_bank
-	lda #>VRAM_psg_vol
+	lda #>(VRAM_psg_voice3 + 2)
 	sta VERA_addr_high
-	lda #<VRAM_psg_vol
+	lda #<(VRAM_psg_voice3 + 2)
 	sta VERA_addr_low
 
-	ldx #0					
-	lda volume,x			; update PSG volume
-	ora #%11000000			; stereo
+	ldx #3
+@update_volume_loop:
+	lda volume,x 
+    ora #%11000000    ; L/R channel	(#192)
 	sta VERA_data0
+	dex
+	bpl @update_volume_loop
 	rts

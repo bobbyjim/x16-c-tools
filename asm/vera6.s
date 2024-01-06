@@ -20,80 +20,7 @@ VRAM_psg_vol	= $1f9c2
 MIDDLE_C		= 702		; Frequency
 IRQVec          = $0314		; RAM Interrupt Vector
 
-; envelope variables.        Voice  0   1   2   3
-state:              		.byte   0,  0,  0,  0
-volume: 					.byte   0,  0,  0,  0
-volume_fractional:			.byte   0,  0,  0,  0
-attack:             		.byte   0,  0,  0,  0
-attack_fractional:  		.byte  90, 80, 70, 60
-decay:						.byte   0,  0,  0,  0
-decay_fractional:			.byte  60, 70, 80, 90
-sustain_level:				.byte  40, 45, 50, 55
-sustain_target:				.byte   5,  6,  7,  8
-sustain_counter:			.byte   0,  0,  0,  0
-sustain_counter_fractional:	.byte   0,  0,  0,  0
-sustain_timer:      		.byte   0,  0,  0,  0
-sustain_timer_fractional: 	.byte   8,  7,  6,  5
-release:            		.byte   1,  2,  3,  1
-release_fractional: 		.byte   0,  0,  0,  0
-
 default_irq_vector: .addr 0
-is_installed: 		.byte 0
-is_initialized: 	.byte 0
-
-installer:
-   lda is_installed
-   bne @installed
-   inc is_installed
-
-   lda IRQVec				; backup default RAM IRQ vector
-   sta default_irq_vector
-   lda IRQVec+1
-   sta default_irq_vector+1
-
-   sei 				
-   lda #<handler	
-   sta IRQVec				; overwrite RAM IRQ vector 
-   lda #>handler
-   sta IRQVec+1				; ...with custom handler address
-   cli 
-@installed:
-   rts
-
-set_up_test_tone:
-    lda is_initialized
-    bne @initialized
-    inc is_initialized
-
-	stz VERA_ctrl
-
-	lda #($10 | ^VRAM_psg_voice2)
-	sta VERA_addr_bank
-	lda #>VRAM_psg_voice2
-	sta VERA_addr_high
-	lda #<VRAM_psg_voice2
-	sta VERA_addr_low
-	lda #<MIDDLE_C
-	sta VERA_data0
-	lda #>MIDDLE_C
-	sta VERA_data0
-	lda #%11011111			; L&R + half volume
-	sta VERA_data0
-	;lda #$3f 				; pulse 50%
-	lda #$C0  				; sound
-	sta VERA_data0
-@initialized:
-	rts
-
-set_test_volume:
-	ldx #2					; Voice 
-	lda #32					; Vol at about 50%
-	sta volume,x
-	lda #$ff
-	sta volume_fractional,x
-	lda #2
-	sta state,x
-	rts
 
 envelope_state: 	.addr state_idle
 					.addr state_attack
@@ -218,4 +145,78 @@ update_volumes:
 	sta VERA_data0
 	dex
 	bpl @update_volume_loop
+	rts
+
+; envelope variables.        Voice  0   1   2   3
+state:              		.byte   0,  0,  0,  0
+volume: 					.byte   0,  0,  0,  0
+volume_fractional:			.byte   0,  0,  0,  0
+attack:             		.byte   0,  0,  0,  0
+attack_fractional:  		.byte  90, 80, 70, 60
+decay:						.byte   0,  0,  0,  0
+decay_fractional:			.byte  60, 70, 80, 90
+sustain_level:				.byte  40, 45, 50, 55
+sustain_target:				.byte   5,  6,  7,  8
+sustain_counter:			.byte   0,  0,  0,  0
+sustain_counter_fractional:	.byte   0,  0,  0,  0
+sustain_timer:      		.byte   0,  0,  0,  0
+sustain_timer_fractional: 	.byte   8,  7,  6,  5
+release:            		.byte   1,  2,  3,  1
+release_fractional: 		.byte   0,  0,  0,  0
+
+is_installed: 		.byte 0
+is_initialized: 	.byte 0
+
+installer:
+   lda is_installed
+   bne @installed
+   inc is_installed
+
+   lda IRQVec				; backup default RAM IRQ vector
+   sta default_irq_vector
+   lda IRQVec+1
+   sta default_irq_vector+1
+
+   sei 				
+   lda #<handler	
+   sta IRQVec				; overwrite RAM IRQ vector 
+   lda #>handler
+   sta IRQVec+1				; ...with custom handler address
+   cli 
+@installed:
+   rts
+
+set_up_test_tone:
+    lda is_initialized
+    bne @initialized
+    inc is_initialized
+
+	stz VERA_ctrl
+
+	lda #($10 | ^VRAM_psg_voice2)
+	sta VERA_addr_bank
+	lda #>VRAM_psg_voice2
+	sta VERA_addr_high
+	lda #<VRAM_psg_voice2
+	sta VERA_addr_low
+	lda #<MIDDLE_C
+	sta VERA_data0
+	lda #>MIDDLE_C
+	sta VERA_data0
+	lda #%11011111			; L&R + half volume
+	sta VERA_data0
+	;lda #$3f 				; pulse 50%
+	lda #$C0  				; sound
+	sta VERA_data0
+@initialized:
+	rts
+
+set_test_volume:
+	ldx #2					; Voice 
+	lda #32					; Vol at about 50%
+	sta volume,x
+	lda #$ff
+	sta volume_fractional,x
+	lda #2
+	sta state,x
 	rts

@@ -1,10 +1,30 @@
 .org $0400
 .segment "CODE"
 
-							; jump table
-	jmp installer 			;   $0400
-	jmp set_up_test_tone	;   $0403
-	jmp set_test_volume		;   $0406
+	; jump table
+	jmp installer 		; $0400
+	jmp set_voice 		; $0403 
+	;	$02 voice 	(R0L)
+	;	$03 volume 	(R0H) and begin ADSR
+	jmp set_envelope	; $0406
+	;	$02 voice 	(R0L)
+	;	$03 attack 	(R0H)
+	;	$04 attack_fractional (R1L)
+	;	$05 decay 	(R1H)
+	;	$06 decay_fractional (R2L)
+	;	$07 sustain_level (R2H)
+	;	$08 sustain_target (R3L)
+	;	$09 sustain_timer (R3H)
+	;	$0a sustain_timer_fractional (R4L)
+	;	$0b release (R4H)
+	;	$0c release_fractional (R5L)
+
+	; $0409 - Voice 7 test.
+	ldx #7
+	stx $02				; voice
+	ldx #20
+	stx $03				; vol
+	jmp set_voice
 
 VERA_addr_low	= $9f20		; VERA
 VERA_addr_high	= $9f21
@@ -16,6 +36,7 @@ VRAM_psg_voice0	= $1f9c0	; VRAM Addresses
 VRAM_psg_voice1	= $1f9c4	
 VRAM_psg_voice2	= $1f9c8
 VRAM_psg_voice3	= $1f9cc	
+VRAM_psg_voice7 = $1f9dc
 VRAM_psg_vol	= $1f9c2
 MIDDLE_C		= 702		; Frequency
 IRQVec          = $0314		; RAM Interrupt Vector
@@ -78,7 +99,7 @@ state_decay:
 ;  Run States
 ;------------------------------------------
 run_states:
-	ldx #3
+	ldx #7
 run_states_loop:
 	lda state,x
 	phx						; push Voice X
@@ -131,14 +152,14 @@ state_release:
 ;------------------------------------------
 update_volumes:
 	stz VERA_ctrl			       ; set to volume register
-	lda #($30 | $08 | ^VRAM_psg_voice3)  ; stride = -4
+	lda #($30 | $08 | ^VRAM_psg_voice7)  ; stride = -4
 	sta VERA_addr_bank
-	lda #>(VRAM_psg_voice3 + 2)
+	lda #>(VRAM_psg_voice7 + 2)
 	sta VERA_addr_high
-	lda #<(VRAM_psg_voice3 + 2)
+	lda #<(VRAM_psg_voice7 + 2)
 	sta VERA_addr_low
 
-	ldx #3
+	ldx #7
 @update_volume_loop:
 	lda volume,x 
     ora #%11000000    ; L/R channel	(#192)
@@ -147,76 +168,72 @@ update_volumes:
 	bpl @update_volume_loop
 	rts
 
-; envelope variables.        Voice  0   1   2   3
-state:              		.byte   0,  0,  0,  0
-volume: 					.byte   0,  0,  0,  0
-volume_fractional:			.byte   0,  0,  0,  0
-attack:             		.byte   0,  0,  0,  0
-attack_fractional:  		.byte  90, 80, 70, 60
-decay:						.byte   0,  0,  0,  0
-decay_fractional:			.byte  60, 70, 80, 90
-sustain_level:				.byte  40, 45, 50, 55
-sustain_target:				.byte   5,  6,  7,  8
-sustain_counter:			.byte   0,  0,  0,  0
-sustain_counter_fractional:	.byte   0,  0,  0,  0
-sustain_timer:      		.byte   0,  0,  0,  0
-sustain_timer_fractional: 	.byte   8,  7,  6,  5
-release:            		.byte   1,  2,  3,  1
-release_fractional: 		.byte   0,  0,  0,  0
+; envelope variables.        Voice  0   1   2   3     4   5   6   7
+state:              		.byte   0,  0,  0,  0,    0,  0,  0,  0
+volume: 					.byte   0,  0,  0,  0,    0,  0,  0,  0
+volume_fractional:			.byte   0,  0,  0,  0,    0,  0,  0,  0
+attack:             		.byte   0,  0,  0,  0,    0,  0,  0,  1
+attack_fractional:  		.byte  90, 80, 70, 60,    0,  0,  0,  0
+decay:						.byte   0,  0,  0,  0,    0,  0,  0,  1
+decay_fractional:			.byte  60, 70, 80, 90,    0,  0,  0,  0
+sustain_level:				.byte  40, 45, 50, 55,    0,  0,  0, 40
+sustain_target:				.byte   5,  6,  7,  8,    0,  0,  0, 10
+sustain_counter:			.byte   0,  0,  0,  0,    0,  0,  0,  0
+sustain_counter_fractional:	.byte   0,  0,  0,  0,    0,  0,  0,  0
+sustain_timer:      		.byte   0,  0,  0,  0,    0,  0,  0,  1
+sustain_timer_fractional: 	.byte   8,  7,  6,  5,    0,  0,  0,  0
+release:            		.byte   1,  2,  3,  1,    0,  0,  0,  0
+release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 40
 
-is_installed: 		.byte 0
-is_initialized: 	.byte 0
+set_voice:
+	ldx $02					; Voice  is in R0L
+	lda $03					; Volume is in R0H
+	sta volume,x
+	lda #$ff
+	sta volume_fractional,x
+	lda #2					; State = Attack
+	sta state,x
+	rts
+
+set_envelope:
+	ldx $02		; voice
+	lda $03		; attack
+	sta attack,x
+	lda $04
+	sta attack_fractional,x
+	lda $05
+	sta decay,x
+	lda $06
+	sta decay_fractional,x
+	lda $07
+	sta sustain_level,x
+	lda $08
+	sta sustain_target,x
+	lda $09
+	sta sustain_timer,x
+	lda $0a
+	sta sustain_timer_fractional,x
+	lda $0b
+	sta release,x
+	lda $0c
+	sta release_fractional,x
+	rts
 
 installer:
-   lda is_installed
-   bne @installed
-   inc is_installed
-
-   lda IRQVec				; backup default RAM IRQ vector
+   lda default_irq_vector	; installed already?
+   bne @installed			; yes, done.
+   lda IRQVec				; no, backup default RAM IRQ vector
    sta default_irq_vector
    lda IRQVec+1
    sta default_irq_vector+1
 
-   sei 				
+   sei 
    lda #<handler	
    sta IRQVec				; overwrite RAM IRQ vector 
    lda #>handler
    sta IRQVec+1				; ...with custom handler address
    cli 
 @installed:
+   lda #$60			; rts
+   sta installer
    rts
-
-set_up_test_tone:
-    lda is_initialized
-    bne @initialized
-    inc is_initialized
-
-	stz VERA_ctrl
-
-	lda #($10 | ^VRAM_psg_voice2)
-	sta VERA_addr_bank
-	lda #>VRAM_psg_voice2
-	sta VERA_addr_high
-	lda #<VRAM_psg_voice2
-	sta VERA_addr_low
-	lda #<MIDDLE_C
-	sta VERA_data0
-	lda #>MIDDLE_C
-	sta VERA_data0
-	lda #%11011111			; L&R + half volume
-	sta VERA_data0
-	;lda #$3f 				; pulse 50%
-	lda #$C0  				; sound
-	sta VERA_data0
-@initialized:
-	rts
-
-set_test_volume:
-	ldx #2					; Voice 
-	lda #32					; Vol at about 50%
-	sta volume,x
-	lda #$ff
-	sta volume_fractional,x
-	lda #2
-	sta state,x
-	rts

@@ -1,0 +1,2 @@
+cl65 -t cx16 adsr1.s -C cx16-asm.cfg -o ADSR1.PRG
+cl65 -t cx16 adsr1_test.s -C cx16-asm.cfg -o ADSR1TEST.PRG

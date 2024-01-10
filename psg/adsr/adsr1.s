@@ -5,9 +5,9 @@
 	jmp installer 		; $0400
 	bra set_voice 		; $0403 
 	bra set_envelope	; $0405
-	jmp voice_7_test	; $0407 (was: 0409)
-	bra turn_handler_off; $040a (was: 040c)
-	bra turn_handler_on	; $040c (was: 040f)
+	jmp voice_7_test	; $0407 
+	bra turn_handler_off; $040a 
+	bra turn_handler_on	; $040c 
 
 VERA_addr_low	= $9f20		; VERA
 VERA_addr_high	= $9f21
@@ -81,11 +81,13 @@ set_voice:
 ;   $04 decay
 ;	$05 decay_fractional
 ;   $06 sustain_level
-;	$07 sustain_target
-;	$08 sustain_timer
-;	$09 sustain_timer_fractional
-;	$0a release
-;	$0b release_fractional
+;	$07 sustain_timer
+;	$08 sustain_timer_fractional
+;	$09 release
+;	$0a release_fractional
+;
+;   What I should do is split input bytes as follows:
+;   (HHHH LLLL) -> (0000 HHHH), (LLLL 0000)
 ;
 ; ------------------------------------------------
 set_envelope:
@@ -101,14 +103,12 @@ set_envelope:
 	lda $06
 	sta sustain_level,x
 	lda $07
-	sta sustain_target,x
-	lda $08
 	sta sustain_timer,x
-	lda $09
+	lda $08
 	sta sustain_timer_fractional,x
-	lda $0a
+	lda $09
 	sta release,x
-	lda $0b
+	lda $0a
 	sta release_fractional,x	
 	rts
 
@@ -159,6 +159,7 @@ state_decay:
 	lda #6
 	sta state,x 
 	stz sustain_counter,x ; set up sustain
+	stz sustain_counter_fractional,x
 	bra return_from_jump 
 
 ;------------------------------------------
@@ -182,13 +183,13 @@ return_from_jump:
 state_sustain:
 	plx       				; pop Voice X
 	lda sustain_counter,x
-	cmp sustain_target,x
-	beq @state_sustain_done	; done
+	cmp sustain_timer,x
+	beq @state_sustain_done	; 0 = done
 	lda sustain_counter_fractional,x ; not done
-	adc sustain_timer_fractional,x   ; counter.lo+=
+	adc #01							 ; counter.lo++
 	sta sustain_counter_fractional,x
 	lda sustain_counter,x
-	adc sustain_timer,x				 ; counter.hi+=
+	adc #00							 ; counter.hi += carry
 	sta sustain_counter,x
 	bra return_from_jump 
 @state_sustain_done:
@@ -255,13 +256,12 @@ attack_fractional:  		.byte  90, 80, 70, 60,    0,  0,  0,  0
 decay:						.byte   0,  0,  0,  0,    0,  0,  0,  1
 decay_fractional:			.byte  60, 70, 80, 90,    0,  0,  0,  0
 sustain_level:				.byte  40, 45, 50, 55,    0,  0,  0, 40
-sustain_target:				.byte   5,  6,  7,  8,    0,  0,  0, 10
 sustain_counter:			.byte   0,  0,  0,  0,    0,  0,  0,  0
 sustain_counter_fractional:	.byte   0,  0,  0,  0,    0,  0,  0,  0
-sustain_timer:      		.byte   0,  0,  0,  0,    0,  0,  0,  2
-sustain_timer_fractional: 	.byte   8,  7,  6,  5,    0,  0,  0,  0
-release:            		.byte   0,  2,  3,  1,    0,  0,  0,  0
-release_fractional: 		.byte  16,  0,  0,  0,    0,  0,  0, 10
+sustain_timer:      		.byte   1,  0,  0,  0,    0,  0,  0,  0
+sustain_timer_fractional: 	.byte   0,  7,  6,  5,    0,  0,  0, 20
+release:            		.byte  15,  2,  3,  1,    0,  0,  0,  0
+release_fractional: 		.byte 240,  0,  0,  0,    0,  0,  0, 20
 
 voice_7_test:				; $05e9
 	ldx #7					; voice

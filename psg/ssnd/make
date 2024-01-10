@@ -1,1 +1,0 @@
-cl65 -t cx16 ssnd.s -C cx16-asm.cfg -o SSND.PRG

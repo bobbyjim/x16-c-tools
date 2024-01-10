@@ -3,28 +3,11 @@
 
 	; jump table
 	jmp installer 		; $0400
-	jmp set_voice 		; $0403 
-	;	$02 voice 	(R0L)
-	;	$03 volume 	(R0H) and begin ADSR
-	jmp set_envelope	; $0406
-	;	$02 voice 	(R0L)
-	;	$03 attack 	(R0H)
-	;	$04 attack_fractional (R1L)
-	;	$05 decay 	(R1H)
-	;	$06 decay_fractional (R2L)
-	;	$07 sustain_level (R2H)
-	;	$08 sustain_target (R3L)
-	;	$09 sustain_timer (R3H)
-	;	$0a sustain_timer_fractional (R4L)
-	;	$0b release (R4H)
-	;	$0c release_fractional (R5L)
-
-	; $0409 - Voice 7 test.
-	ldx #7
-	stx $02				; voice
-	ldx #20
-	stx $03				; vol
-	jmp set_voice
+	bra set_voice 		; $0403 
+	bra set_envelope	; $0405
+	jmp voice_7_test	; $0407 (was: 0409)
+	bra turn_handler_off; $040a (was: 040c)
+	bra turn_handler_on	; $040c (was: 040f)
 
 VERA_addr_low	= $9f20		; VERA
 VERA_addr_high	= $9f21
@@ -41,18 +24,101 @@ VRAM_psg_vol	= $1f9c2
 MIDDLE_C		= 702		; Frequency
 IRQVec          = $0314		; RAM Interrupt Vector
 
-default_irq_vector: .addr 0
+.macro SAVE_VERA_REGISTERS
+	lda VERA_addr_low
+	sta data_store
+	lda VERA_addr_high
+	sta data_store+1
+	lda VERA_addr_bank
+	sta data_store+2
+	lda VERA_ctrl
+	sta data_store+3
+.endmacro
 
-envelope_state: 	.addr state_idle
-					.addr state_attack
-					.addr state_decay
-					.addr state_sustain
-					.addr state_release
+.macro RESTORE_VERA_REGISTERS
+	lda data_store
+	sta VERA_addr_low
+	lda data_store+1
+	sta VERA_addr_high
+	lda data_store+2
+	sta VERA_addr_bank
+	lda data_store+3
+	sta VERA_ctrl
+.endmacro
+
+turn_handler_on:
+	inc handler_is_active
+	rts
+
+turn_handler_off:
+	stz handler_is_active
+	rts
+
+; ------------------------------------------------
+;
+;  	Set Voice Volume and begin ADSR
+;
+;	x = voice 	
+;	a = volume 
+;
+; ------------------------------------------------
+set_voice:
+	sta volume,x
+	lda #$ff
+	sta volume_fractional,x
+	lda #2					; State = Attack
+	sta state,x
+	rts
+	
+; ------------------------------------------------
+;
+;  	Set Envelope for a given Voice.
+;
+;	x = voice 	
+;   a = volume
+;	$02 attack
+;	$03 attack_fractional
+;   $04 decay
+;	$05 decay_fractional
+;   $06 sustain_level
+;	$07 sustain_target
+;	$08 sustain_timer
+;	$09 sustain_timer_fractional
+;	$0a release
+;	$0b release_fractional
+;
+; ------------------------------------------------
+set_envelope:
+    sta volume,x
+	lda $02
+	sta attack,x 
+	lda $03
+	sta attack_fractional,x 
+	lda $04
+	sta decay,x
+	lda $05
+	sta decay_fractional,x
+	lda $06
+	sta sustain_level,x
+	lda $07
+	sta sustain_target,x
+	lda $08
+	sta sustain_timer,x
+	lda $09
+	sta sustain_timer_fractional,x
+	lda $0a
+	sta release,x
+	lda $0b
+	sta release_fractional,x	
+	rts
 
 ;----------------------------------------
 handler:
+	lda handler_is_active
+	beq @inactive
 	jsr run_states
 	jsr update_volumes
+@inactive:
     jmp (default_irq_vector) ; done
 ;----------------------------------------
 
@@ -99,6 +165,7 @@ state_decay:
 ;  Run States
 ;------------------------------------------
 run_states:
+    SAVE_VERA_REGISTERS
 	ldx #7
 run_states_loop:
 	lda state,x
@@ -109,6 +176,7 @@ return_from_jump:
 	; X ought to be restored at this point
 	dex
 	bpl run_states_loop
+	RESTORE_VERA_REGISTERS
 	rts
 
 state_sustain:
@@ -168,6 +236,16 @@ update_volumes:
 	bpl @update_volume_loop
 	rts
 
+data_store:			.res 4,0
+default_irq_vector: .addr 0
+envelope_state: 	.addr state_idle
+					.addr state_attack
+					.addr state_decay
+					.addr state_sustain
+					.addr state_release
+
+handler_is_active:	.byte 0		; OFF BY DEFAULT
+
 ; envelope variables.        Voice  0   1   2   3     4   5   6   7
 state:              		.byte   0,  0,  0,  0,    0,  0,  0,  0
 volume: 					.byte   0,  0,  0,  0,    0,  0,  0,  0
@@ -180,54 +258,25 @@ sustain_level:				.byte  40, 45, 50, 55,    0,  0,  0, 40
 sustain_target:				.byte   5,  6,  7,  8,    0,  0,  0, 10
 sustain_counter:			.byte   0,  0,  0,  0,    0,  0,  0,  0
 sustain_counter_fractional:	.byte   0,  0,  0,  0,    0,  0,  0,  0
-sustain_timer:      		.byte   0,  0,  0,  0,    0,  0,  0,  1
+sustain_timer:      		.byte   0,  0,  0,  0,    0,  0,  0,  2
 sustain_timer_fractional: 	.byte   8,  7,  6,  5,    0,  0,  0,  0
-release:            		.byte   1,  2,  3,  1,    0,  0,  0,  0
-release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 40
+release:            		.byte   0,  2,  3,  1,    0,  0,  0,  0
+release_fractional: 		.byte  16,  0,  0,  0,    0,  0,  0, 10
 
-set_voice:
-	ldx $02					; Voice  is in R0L
-	lda $03					; Volume is in R0H
-	sta volume,x
-	lda #$ff
-	sta volume_fractional,x
-	lda #2					; State = Attack
-	sta state,x
-	rts
+voice_7_test:				; $05e9
+	ldx #7					; voice
+	lda #20					; vol
+	jmp set_voice
 
-set_envelope:
-	ldx $02		; voice
-	lda $03		; attack
-	sta attack,x
-	lda $04
-	sta attack_fractional,x
-	lda $05
-	sta decay,x
-	lda $06
-	sta decay_fractional,x
-	lda $07
-	sta sustain_level,x
-	lda $08
-	sta sustain_target,x
-	lda $09
-	sta sustain_timer,x
-	lda $0a
-	sta sustain_timer_fractional,x
-	lda $0b
-	sta release,x
-	lda $0c
-	sta release_fractional,x
-	rts
-
-installer:
+installer:					; $05f0
    lda default_irq_vector	; installed already?
    bne @installed			; yes, done.
    lda IRQVec				; no, backup default RAM IRQ vector
    sta default_irq_vector
    lda IRQVec+1
    sta default_irq_vector+1
-
-   sei 
+   							; $0601
+   sei 						
    lda #<handler	
    sta IRQVec				; overwrite RAM IRQ vector 
    lda #>handler

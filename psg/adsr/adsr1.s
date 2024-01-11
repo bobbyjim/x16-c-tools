@@ -1,13 +1,36 @@
 .org $0400
 .segment "CODE"
 
+; ----------------------------------------------------------------------------
+;
+;  Envelope Settings
+;
+;  A possible way to set these is to use a single byte:
+;    ASL the byte four times, shifting in the carry bit
+;    into the upper register each time.
+;
+; ----------------------------------------------------------------------------
+;                            Voice  0   1   2   3     4   5   6   7
+;                                  ----------------------------------
+state:              		.byte   0,  0,  0,  0,    0,  0,  0,  0 ; $0400
+volume: 					.byte   0,  0,  0,  0,    0,  0,  0,  0 
+volume_fractional:			.byte   0,  0,  0,  0,    0,  0,  0,  0 ; $0410
+attack:             		.byte   0,  0,  0,  0,    0,  0,  0,  1 
+attack_fractional:  		.byte  90, 80, 70, 60,    0,  0,  0,  0 ; $0420
+decay:						.byte   0,  0,  0,  0,    0,  0,  0,  1 
+decay_fractional:			.byte  60, 70, 80, 90,    0,  0,  0,  0 ; $0430
+sustain_level:				.byte  40, 45, 50, 55,    0,  0,  0, 40
+sustain_timer:      		.byte   1,  0,  0,  0,    0,  0,  0,  0 ; $0440
+sustain_timer_fractional: 	.byte   0,  7,  6,  5,    0,  0,  0, 20
+release:            		.byte   1,  2,  3,  1,    0,  0,  0,  0 ; $0450
+release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 20
+
 	; jump table
-	jmp installer 		; $0400
-	bra set_voice 		; $0403 
-	bra set_envelope	; $0405
-	jmp voice_7_test	; $0407 
-	bra turn_handler_off; $040a 
-	bra turn_handler_on	; $040c 
+	jmp installer 			; $0460
+	bra activate_voice 		; $0463 
+	jmp voice_7_test		; $0465
+	bra turn_handler_off	; $0468 
+	bra turn_handler_on		; $046a 
 
 VERA_addr_low	= $9f20		; VERA
 VERA_addr_high	= $9f21
@@ -56,60 +79,18 @@ turn_handler_off:
 
 ; ------------------------------------------------
 ;
-;  	Set Voice Volume and begin ADSR
+;  	Set Volume and begin ADSR
 ;
 ;	x = voice 	
 ;	a = volume 
 ;
 ; ------------------------------------------------
-set_voice:
+activate_voice:
 	sta volume,x
 	lda #$ff
 	sta volume_fractional,x
 	lda #2					; State = Attack
 	sta state,x
-	rts
-	
-; ------------------------------------------------
-;
-;  	Set Envelope for a given Voice.
-;
-;	x = voice 	
-;   a = volume
-;	$02 attack
-;	$03 attack_fractional
-;   $04 decay
-;	$05 decay_fractional
-;   $06 sustain_level
-;	$07 sustain_timer
-;	$08 sustain_timer_fractional
-;	$09 release
-;	$0a release_fractional
-;
-;   What I should do is split input bytes as follows:
-;   (HHHH LLLL) -> (0000 HHHH), (LLLL 0000)
-;
-; ------------------------------------------------
-set_envelope:
-    sta volume,x
-	lda $02
-	sta attack,x 
-	lda $03
-	sta attack_fractional,x 
-	lda $04
-	sta decay,x
-	lda $05
-	sta decay_fractional,x
-	lda $06
-	sta sustain_level,x
-	lda $07
-	sta sustain_timer,x
-	lda $08
-	sta sustain_timer_fractional,x
-	lda $09
-	sta release,x
-	lda $0a
-	sta release_fractional,x	
 	rts
 
 ;----------------------------------------
@@ -237,6 +218,9 @@ update_volumes:
 	bpl @update_volume_loop
 	rts
 
+; -----------------------------------------------------------------
+;  Variables
+; -----------------------------------------------------------------
 data_store:			.res 4,0
 default_irq_vector: .addr 0
 envelope_state: 	.addr state_idle
@@ -247,35 +231,23 @@ envelope_state: 	.addr state_idle
 
 handler_is_active:	.byte 0		; OFF BY DEFAULT
 
-; envelope variables.        Voice  0   1   2   3     4   5   6   7
-state:              		.byte   0,  0,  0,  0,    0,  0,  0,  0
-volume: 					.byte   0,  0,  0,  0,    0,  0,  0,  0
-volume_fractional:			.byte   0,  0,  0,  0,    0,  0,  0,  0
-attack:             		.byte   0,  0,  0,  0,    0,  0,  0,  1
-attack_fractional:  		.byte  90, 80, 70, 60,    0,  0,  0,  0
-decay:						.byte   0,  0,  0,  0,    0,  0,  0,  1
-decay_fractional:			.byte  60, 70, 80, 90,    0,  0,  0,  0
-sustain_level:				.byte  40, 45, 50, 55,    0,  0,  0, 40
-sustain_counter:			.byte   0,  0,  0,  0,    0,  0,  0,  0
-sustain_counter_fractional:	.byte   0,  0,  0,  0,    0,  0,  0,  0
-sustain_timer:      		.byte   1,  0,  0,  0,    0,  0,  0,  0
-sustain_timer_fractional: 	.byte   0,  7,  6,  5,    0,  0,  0, 20
-release:            		.byte  15,  2,  3,  1,    0,  0,  0,  0
-release_fractional: 		.byte 240,  0,  0,  0,    0,  0,  0, 20
+sustain_counter:			.res 8,0	; INTERNAL counters
+sustain_counter_fractional:	.res 8,0	;   for sustain timer
+; -----------------------------------------------------------------
 
-voice_7_test:				; $05e9
+voice_7_test:				; $05aa
 	ldx #7					; voice
 	lda #20					; vol
-	jmp set_voice
+	jmp activate_voice
 
-installer:					; $05f0
+installer:					; $05b1
    lda default_irq_vector	; installed already?
    bne @installed			; yes, done.
    lda IRQVec				; no, backup default RAM IRQ vector
    sta default_irq_vector
    lda IRQVec+1
    sta default_irq_vector+1
-   							; $0601
+   						
    sei 						
    lda #<handler	
    sta IRQVec				; overwrite RAM IRQ vector 

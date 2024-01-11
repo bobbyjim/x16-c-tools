@@ -9,12 +9,12 @@
 #define  STEREO_VOLUME(vol)       (vol + 196)
 #define ABI(x) = ((unsigned char *)0x02[x]);
 
-#define  ADSR_INSTALLER    0x0400
-#define  ADSR_ACTIVATE_VOICE 0x0403
-#define  ADSR_SET_ENVELOPE 0x0405
-#define  ADSR_VOICE7_TEST  0x0407
-#define  ADSR_HANDLER_OFF  0x040a
-#define  ADSR_HANDLER_ON   0x040c
+#define  ADSR_ENVELOPE_DATA   ((unsigned char*) 0x400)
+#define  ADSR_INSTALLER       0x0460
+#define  ADSR_ACTIVATE_VOICE  0x0463
+#define  ADSR_VOICE7_TEST     0x0465
+#define  ADSR_HANDLER_OFF     0x0468
+#define  ADSR_HANDLER_ON      0x046a
 
 void set_PET_font()
 {

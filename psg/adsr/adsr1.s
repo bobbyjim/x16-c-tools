@@ -15,7 +15,7 @@
 state:              		.byte   0,  0,  0,  0,    0,  0,  0,  0 ; $0400
 volume: 					.byte   0,  0,  0,  0,    0,  0,  0,  0 
 volume_fractional:			.byte   0,  0,  0,  0,    0,  0,  0,  0 ; $0410
-attack:             		.byte   0,  0,  0,  0,    0,  0,  0,  1 
+attack:             		.byte   0,  0,  0,  0,    0,  0,  0,  8 
 attack_fractional:  		.byte  90, 80, 70, 60,    0,  0,  0,  0 ; $0420
 decay:						.byte   0,  0,  0,  0,    0,  0,  0,  1 
 decay_fractional:			.byte  60, 70, 80, 90,    0,  0,  0,  0 ; $0430
@@ -49,24 +49,24 @@ IRQVec          = $0314		; RAM Interrupt Vector
 
 .macro SAVE_VERA_REGISTERS
 	lda VERA_addr_low
-	sta data_store
+	sta data_store			; try: pha
 	lda VERA_addr_high
-	sta data_store+1
+	sta data_store+1		; try: pha
 	lda VERA_addr_bank
-	sta data_store+2
+	sta data_store+2		; try: pha
 	lda VERA_ctrl
-	sta data_store+3
+	sta data_store+3		; try: pha
 .endmacro
 
 .macro RESTORE_VERA_REGISTERS
-	lda data_store
-	sta VERA_addr_low
-	lda data_store+1
-	sta VERA_addr_high
-	lda data_store+2
-	sta VERA_addr_bank
-	lda data_store+3
+	lda data_store+3		; try: plp
 	sta VERA_ctrl
+	lda data_store+2		; try: plp
+	sta VERA_addr_bank
+	lda data_store+1		; try: plp
+	sta VERA_addr_high
+	lda data_store			; try: plp
+	sta VERA_addr_low
 .endmacro
 
 turn_handler_on:
@@ -111,7 +111,7 @@ state_attack:
 	plx       				; pop Voice X
 	lda volume,x
 	cmp #62
-	bpl @state_attack_done  ; done 
+	bcs @state_attack_done  ; volume >= 62 
 	lda volume_fractional,x ; not done
 	adc attack_fractional,x ; vol.lo+=
 	sta volume_fractional,x
@@ -128,7 +128,7 @@ state_decay:
 	plx       				; pop Voice X
 	lda volume,x
 	cmp sustain_level,x
-	bmi @state_decay_done   ; done
+	bcc @state_decay_done   ; volume < sustain_level
 	lda volume_fractional,x ; not done
 	sbc decay_fractional,x  ; vol.lo-=
 	sta volume_fractional,x
@@ -165,7 +165,7 @@ state_sustain:
 	plx       				; pop Voice X
 	lda sustain_counter,x
 	cmp sustain_timer,x
-	bpl @state_sustain_done	; 0 = done
+	bcs @state_sustain_done	; sustain_counter >= sustain_timer
 	lda sustain_counter_fractional,x ; not done
 	adc #01							 ; counter.lo++
 	sta sustain_counter_fractional,x
@@ -183,14 +183,11 @@ state_release:
 	lda volume,x
 	cmp #0
 	beq @state_release_done  ; done
-;	cmp release,x
-;	bmi @state_release_done  ; done
 	lda volume_fractional,x  ; not done
 	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x
 	lda volume,x
 	sbc release,x            ; vol.hi-=
-;	bcs @state_release_done	 ; dropped below zero
 	sta volume,x
 	bra return_from_jump 
 @state_release_done:
@@ -238,7 +235,7 @@ sustain_counter_fractional:	.res 8,0	;   for sustain timer
 
 voice_7_test:				; $05aa
 	ldx #7					; voice
-	lda #20					; vol
+	lda #0					; vol
 	jmp activate_voice
 
 installer:					; $05b1

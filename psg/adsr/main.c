@@ -46,12 +46,10 @@ void main()
    VERA.data0        = STEREO_VOLUME(20);
    VERA.data0        = PSG_WAVE_NOISE;
 
-   //adsr_setAttack(    0, 100);
-   ADSR_SET_STATE_DECAY(0);         // skip attack
-   adsr_setDecay(     0, 100, 63);
-   adsr_setSustain(   0, 0);
-   adsr_setRelease(   0, 255);
-   ADSR_SET_VOLUME(0,63);
-   //adsr_activateVoice(0,20);
+   adsr_setAttack(    0, 50);
+   adsr_setDecay(     0, 100, 42);
+   adsr_setSustain(   0, 100);
+   adsr_setRelease(   0, 100);
+   adsr_activateVoice(0,0);
    adsr_setHandler(ADSR_ON);
 }

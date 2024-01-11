@@ -110,8 +110,8 @@ state_idle:
 state_attack:
 	plx       				; pop Voice X
 	lda volume,x
-	cmp #63
-	beq @state_attack_done  ; done 
+	cmp #62
+	bpl @state_attack_done  ; done 
 	lda volume_fractional,x ; not done
 	adc attack_fractional,x ; vol.lo+=
 	sta volume_fractional,x
@@ -128,7 +128,7 @@ state_decay:
 	plx       				; pop Voice X
 	lda volume,x
 	cmp sustain_level,x
-	beq @state_decay_done   ; done
+	bmi @state_decay_done   ; done
 	lda volume_fractional,x ; not done
 	sbc decay_fractional,x  ; vol.lo-=
 	sta volume_fractional,x
@@ -165,7 +165,7 @@ state_sustain:
 	plx       				; pop Voice X
 	lda sustain_counter,x
 	cmp sustain_timer,x
-	beq @state_sustain_done	; 0 = done
+	bpl @state_sustain_done	; 0 = done
 	lda sustain_counter_fractional,x ; not done
 	adc #01							 ; counter.lo++
 	sta sustain_counter_fractional,x
@@ -183,13 +183,14 @@ state_release:
 	lda volume,x
 	cmp #0
 	beq @state_release_done  ; done
-	cmp release,x
-	bmi @state_release_done  ; done
+;	cmp release,x
+;	bmi @state_release_done  ; done
 	lda volume_fractional,x  ; not done
 	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x
 	lda volume,x
 	sbc release,x            ; vol.hi-=
+;	bcs @state_release_done	 ; dropped below zero
 	sta volume,x
 	bra return_from_jump 
 @state_release_done:

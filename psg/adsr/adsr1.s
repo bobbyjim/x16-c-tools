@@ -94,8 +94,8 @@ activate_voice:
 	rts
 
 ;----------------------------------------
-handler:
-	lda handler_is_active
+handler:					; consider running only every fourth time,
+	lda handler_is_active	; in order to not waste cpu time.
 	beq @inactive
 	jsr run_states
 	jsr update_volumes
@@ -181,8 +181,8 @@ state_sustain:
 state_release:
 	plx       				; pop Voice X
 	lda volume,x
-	cmp #0
-	beq @state_release_done  ; done
+	cmp #4
+	bcc @state_release_done  ; volume < 4
 	lda volume_fractional,x  ; not done
 	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x

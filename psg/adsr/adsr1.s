@@ -103,12 +103,11 @@ handler:					; consider running only every fourth time,
     jmp (default_irq_vector) ; done
 ;----------------------------------------
 
-state_idle:
-	plx       				; pop Voice X
-	bra return_from_jump
-
 state_attack:
 	plx       				; pop Voice X
+	lda attack,x 
+	adc attack_fractional,x 
+	beq @state_attack_done  ; attack = 0000
 	lda volume,x
 	cmp #62
 	bcs @state_attack_done  ; volume >= 62 
@@ -120,12 +119,17 @@ state_attack:
 	sta volume,x
 	bra return_from_jump
 @state_attack_done:
+    lda #63
+	sta volume,x
 	lda #4
 	sta state,x 
 	bra return_from_jump
 
 state_decay:
 	plx       				; pop Voice X
+	lda decay,x 
+	adc decay_fractional,x 
+	beq @state_decay_done
 	lda volume,x
 	cmp sustain_level,x
 	bcc @state_decay_done   ; volume < sustain_level
@@ -137,11 +141,17 @@ state_decay:
 	sta volume,x
 	bra return_from_jump 
 @state_decay_done:
+    lda sustain_level,x 
+	sta volume,x
 	lda #6
 	sta state,x 
 	stz sustain_counter,x ; set up sustain
 	stz sustain_counter_fractional,x
 	bra return_from_jump 
+
+state_idle:
+	plx       				; pop Voice X
+	bra return_from_jump
 
 ;------------------------------------------
 ;  Run States

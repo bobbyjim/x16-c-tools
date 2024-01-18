@@ -32,6 +32,7 @@ release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 20
 	bra turn_handler_off	; $0468 
 	bra turn_handler_on		; $046a 
 
+ZP_REGISTERS	= $02
 VERA_addr_low	= $9f20		; VERA
 VERA_addr_high	= $9f21
 VERA_addr_bank	= $9f22
@@ -49,23 +50,23 @@ IRQVec          = $0314		; RAM Interrupt Vector
 
 .macro SAVE_VERA_REGISTERS
 	lda VERA_addr_low
-	sta data_store			; try: pha
+	sta ZP_REGISTERS; data_store			; try: pha
 	lda VERA_addr_high
-	sta data_store+1		; try: pha
+	sta ZP_REGISTERS+1; data_store+1		; try: pha
 	lda VERA_addr_bank
-	sta data_store+2		; try: pha
+	sta ZP_REGISTERS+2; data_store+2		; try: pha
 	lda VERA_ctrl
-	sta data_store+3		; try: pha
+	sta ZP_REGISTERS+3; data_store+3		; try: pha
 .endmacro
 
 .macro RESTORE_VERA_REGISTERS
-	lda data_store+3		; try: plp
+	lda ZP_REGISTERS+3; data_store+3		; try: plp
 	sta VERA_ctrl
-	lda data_store+2		; try: plp
+	lda ZP_REGISTERS+2; data_store+2		; try: plp
 	sta VERA_addr_bank
-	lda data_store+1		; try: plp
+	lda ZP_REGISTERS+1; data_store+1		; try: plp
 	sta VERA_addr_high
-	lda data_store			; try: plp
+	lda ZP_REGISTERS; data_store			; try: plp
 	sta VERA_addr_low
 .endmacro
 
@@ -94,8 +95,8 @@ activate_voice:
 	rts
 
 ;----------------------------------------
-handler:					; consider running only every fourth time,
-	lda handler_is_active	; in order to not waste cpu time.
+handler:					
+	lda handler_is_active	
 	beq @inactive
 	jsr run_states
 	jsr update_volumes
@@ -116,14 +117,14 @@ state_attack:
 	sta volume_fractional,x
 	lda volume,x
 	adc attack,x			; vol.hi+=
+@state_attack_update_volume:
 	sta volume,x
 	bra return_from_jump
 @state_attack_done:
-    lda #63
-	sta volume,x
 	lda #4
 	sta state,x 
-	bra return_from_jump
+    lda #63
+	bra @state_attack_update_volume
 
 state_decay:
 	plx       				; pop Voice X
@@ -138,16 +139,16 @@ state_decay:
 	sta volume_fractional,x
 	lda volume,x
 	sbc decay,x				; vol.hi-=
+@state_decay_update_volume:
 	sta volume,x
 	bra return_from_jump 
 @state_decay_done:
-    lda sustain_level,x 
-	sta volume,x
 	lda #6
 	sta state,x 
 	stz sustain_counter,x ; set up sustain
 	stz sustain_counter_fractional,x
-	bra return_from_jump 
+    lda sustain_level,x 
+	bra @state_decay_update_volume
 
 state_idle:
 	plx       				; pop Voice X
@@ -229,7 +230,7 @@ update_volumes:
 ; -----------------------------------------------------------------
 ;  Variables
 ; -----------------------------------------------------------------
-data_store:			.res 4,0
+;data_store:			.res 4,0  ; replaced by $02 $03 $04 $05
 default_irq_vector: .addr 0
 envelope_state: 	.addr state_idle
 					.addr state_attack
@@ -243,12 +244,12 @@ sustain_counter:			.res 8,0	; INTERNAL counters
 sustain_counter_fractional:	.res 8,0	;   for sustain timer
 ; -----------------------------------------------------------------
 
-voice_7_test:				; $05aa
+voice_7_test:				; 
 	ldx #7					; voice
 	lda #0					; vol
 	jmp activate_voice
 
-installer:					; $05b1
+installer:					; 
    lda default_irq_vector	; installed already?
    bne @installed			; yes, done.
    lda IRQVec				; no, backup default RAM IRQ vector

@@ -1,4 +1,4 @@
-SOURCES = main.c ADSR.c
+SOURCES = main.c ADSR.c timer.c
 
 PROGRAM = MAIN
 

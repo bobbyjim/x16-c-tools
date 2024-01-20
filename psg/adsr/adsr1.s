@@ -174,6 +174,8 @@ return_from_jump:
 
 state_sustain:
 	plx       				; pop Voice X
+    lda sustain_timer,x 
+	beq @state_sustain_done ; no timer
 	lda sustain_counter,x
 	cmp sustain_timer,x
 	bcs @state_sustain_done	; sustain_counter >= sustain_timer

@@ -27,6 +27,12 @@ void adsr_setHandler(unsigned char handlerStatus)
    _sys(&my_adsr_regs);
 }
 
+void adsr_defineVoice(unsigned char voice, 
+                      unsigned char freq)
+{
+
+}
+
 void adsr_activateVoice(unsigned char voice, unsigned char volume)
 {
    struct regs my_adsr_regs;

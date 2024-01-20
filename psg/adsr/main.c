@@ -24,7 +24,7 @@
 #define  PSG_WAVE_TRIANGLE          (2 << 6)
 #define  PSG_WAVE_NOISE             (3 << 6)
 
-int tunedNotes[] = {
+unsigned int tunedNotes[] = {
 //   0       1     2       3      4      5          6      7      8      9      10     11
 //  (C2)  , Cs2  , d2    , ds2  , e2   , f2     //  fs2  , g2   , gs2   , a2   , as2  , b2    
     0    , 186  , 197   , 208  , 221  , 234 ,      248  , 263  , 278   , 295  , 312  , 331 , // 0 - 11
@@ -126,8 +126,7 @@ void main()
 
    for(;;) 
    {
-       //clrscr();
-       //cprintf("%u", loopCount);
+       clrscr();
        pause_jiffies( 45 - loopCount/22 );
 
        if (invention13_dualVoice[loopCount] == 255) loopCount = 0;
@@ -137,20 +136,28 @@ void main()
 
        if (prev0 != note0)
        {
-          VERA.control      = 0;              // port 0
-          VERA.address      = 0xf9c0;         // voice 0
-          VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
-          VERA.data0        = tunedNotes[note0] & 0xff;    // freq 1
-          VERA.data0        = tunedNotes[note0] >> 8;      // freq 2
+          // strange thing... if you don't do a cprintf() here, the frequencies get all messed up
+          // in the playback.  Why???
+          cprintf("%u\r\n", tunedNotes[note0]);
+          adsr_setFrequency(0, tunedNotes[note0]);
+          //VERA.control      = 0;              // port 0
+          //VERA.address      = 0xf9c0;         // voice 0
+          //VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
+          //VERA.data0        = tunedNotes[note0] & 0xff;    // freq 1
+          //VERA.data0        = tunedNotes[note0] >> 8;      // freq 2
        }
 
        if (prev1 != note1)
        {
-          VERA.control      = 0;              // port 0
-          VERA.address      = 0xf9c4;         // voice 1
-          VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
-          VERA.data0        = tunedNotes[note1] & 0xff;    // freq 1
-          VERA.data0        = tunedNotes[note1] >> 8;      // freq 2
+          // strange thing... if you don't do a cprintf() here, the frequencies get all messed up
+          // in the playback.  Why???
+          cprintf("%u\r\n", tunedNotes[note1]);
+          adsr_setFrequency(1, tunedNotes[note1]);
+          //VERA.control      = 0;              // port 0
+          //VERA.address      = 0xf9c4;         // voice 1
+          //VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
+          //VERA.data0        = tunedNotes[note1] & 0xff;    // freq 1
+          //VERA.data0        = tunedNotes[note1] >> 8;      // freq 2
        }
        loopCount += 2;
 
@@ -159,28 +166,5 @@ void main()
 
        prev0 = note0;
        prev1 = note1;
-
-/*
-       cprintf("attack: ");
-       gets(line);
-       attack = atoi(line);
-       cprintf("decay: ");
-       gets(line);
-       decay = atoi(line);
-       cprintf("sustain: ");
-       gets(line);
-       sustain = atoi(line);
-       cprintf("release: ");
-       gets(line);
-       release = atoi(line);
-       cprintf("%u %u %u %u\r\n", attack, decay, sustain, release);
-    
-       adsr_setAttack(    0, attack);
-       adsr_setDecay(     0, decay, 42);
-       adsr_setSustain(   0, sustain);
-       adsr_setRelease(   0, release);
-       adsr_activateVoice(0,0);
-       adsr_setHandler(ADSR_ON);
-*/
    }
 }

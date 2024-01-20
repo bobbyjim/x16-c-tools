@@ -31,6 +31,7 @@ release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 20
 	jmp voice_7_test		; $0465
 	bra turn_handler_off	; $0468 
 	bra turn_handler_on		; $046a 
+	bra set_frequency		; $046c
 
 ZP_REGISTERS	= $02
 VERA_addr_low	= $9f20		; VERA
@@ -92,6 +93,31 @@ activate_voice:
 	sta volume_fractional,x
 	lda #2					; State = Attack
 	sta state,x
+	rts
+
+; ------------------------------------------------
+;
+;  	Set voice frequency
+; 	
+;   a   = voice
+;	x   = freq hi
+;   y   = freq lo
+;
+; ------------------------------------------------
+set_frequency:
+    stz VERA_ctrl
+	asl 	; 
+	asl 	; a = a * 4 (voice offset)
+	sta $02
+	lda #($10 | ^VRAM_psg_voice0)  ; stride = +1
+	sta VERA_addr_bank
+	lda #>VRAM_psg_voice0
+	sta VERA_addr_high
+	lda $02
+	adc #<VRAM_psg_voice0 ; #$C0
+	sta VERA_addr_low
+	stx VERA_data0		; freq_lo
+	sty VERA_data0		; freq_hi
 	rts
 
 ;----------------------------------------

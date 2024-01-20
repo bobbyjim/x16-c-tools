@@ -9,6 +9,7 @@
 #define  ADSR_VOICE7_TEST           0x0465
 #define  ADSR_HANDLER_OFF           0x0468
 #define  ADSR_HANDLER_ON            0x046a
+#define  ADSR_SET_FREQUENCY         0x046c
 
 #define  ADSR_SET_STATE_IDLE(v)		ADSR_STATE[v] = 0
 #define  ADSR_SET_STATE_ATTACK(v)	ADSR_STATE[v] = 2
@@ -30,6 +31,7 @@
 #define  ADSR_RELEASE                  ((unsigned char*) (0x450))
 #define  ADSR_RELEASE_FRACTIONAL       ((unsigned char*) (0x458))
 
+void adsr_setFrequency(unsigned char voice, unsigned int freq);
 void adsr_setAttack(unsigned char voice, unsigned char level);
 void adsr_setDecay(unsigned char voice, unsigned char level, unsigned char sustain_level);
 void adsr_setSustain(unsigned char voice, unsigned char level);

@@ -1,6 +1,44 @@
 .org $0400
 .segment "CODE"
 
+ZP_REGISTERS	= $02
+VERA_addr_low	= $9f20		; VERA
+VERA_addr_high	= $9f21
+VERA_addr_bank	= $9f22
+VERA_data0		= $9f23
+VERA_data1		= $9f24
+VERA_ctrl		= $9f25
+VRAM_psg_voice0	= $1f9c0	; VRAM Addresses
+VRAM_psg_voice1	= $1f9c4	
+VRAM_psg_voice2	= $1f9c8
+VRAM_psg_voice3	= $1f9cc	
+VRAM_psg_voice7 = $1f9dc
+VRAM_psg_vol	= $1f9c2
+MIDDLE_C		= 702		; Frequency
+IRQVec          = $0314		; RAM Interrupt Vector
+
+.macro SAVE_VERA_REGISTERS
+	lda VERA_addr_low
+	sta ZP_REGISTERS+16; data_store			; try: pha
+	lda VERA_addr_high
+	sta ZP_REGISTERS+17; data_store+1		; try: pha
+	lda VERA_addr_bank
+	sta ZP_REGISTERS+18; data_store+2		; try: pha
+	lda VERA_ctrl
+	sta ZP_REGISTERS+19; data_store+3		; try: pha
+.endmacro
+
+.macro RESTORE_VERA_REGISTERS
+	lda ZP_REGISTERS+19; data_store+3		; try: plp
+	sta VERA_ctrl
+	lda ZP_REGISTERS+18; data_store+2		; try: plp
+	sta VERA_addr_bank
+	lda ZP_REGISTERS+17; data_store+1		; try: plp
+	sta VERA_addr_high
+	lda ZP_REGISTERS+16; data_store			; try: plp
+	sta VERA_addr_low
+.endmacro
+
 ; ----------------------------------------------------------------------------
 ;
 ;  Envelope Settings
@@ -31,45 +69,7 @@ release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 20
 	jmp voice_7_test		; $0465
 	bra turn_handler_off	; $0468 
 	bra turn_handler_on		; $046a 
-	bra set_frequency		; $046c
-
-ZP_REGISTERS	= $02
-VERA_addr_low	= $9f20		; VERA
-VERA_addr_high	= $9f21
-VERA_addr_bank	= $9f22
-VERA_data0		= $9f23
-VERA_data1		= $9f24
-VERA_ctrl		= $9f25
-VRAM_psg_voice0	= $1f9c0	; VRAM Addresses
-VRAM_psg_voice1	= $1f9c4	
-VRAM_psg_voice2	= $1f9c8
-VRAM_psg_voice3	= $1f9cc	
-VRAM_psg_voice7 = $1f9dc
-VRAM_psg_vol	= $1f9c2
-MIDDLE_C		= 702		; Frequency
-IRQVec          = $0314		; RAM Interrupt Vector
-
-.macro SAVE_VERA_REGISTERS
-	lda VERA_addr_low
-	sta ZP_REGISTERS; data_store			; try: pha
-	lda VERA_addr_high
-	sta ZP_REGISTERS+1; data_store+1		; try: pha
-	lda VERA_addr_bank
-	sta ZP_REGISTERS+2; data_store+2		; try: pha
-	lda VERA_ctrl
-	sta ZP_REGISTERS+3; data_store+3		; try: pha
-.endmacro
-
-.macro RESTORE_VERA_REGISTERS
-	lda ZP_REGISTERS+3; data_store+3		; try: plp
-	sta VERA_ctrl
-	lda ZP_REGISTERS+2; data_store+2		; try: plp
-	sta VERA_addr_bank
-	lda ZP_REGISTERS+1; data_store+1		; try: plp
-	sta VERA_addr_high
-	lda ZP_REGISTERS; data_store			; try: plp
-	sta VERA_addr_low
-.endmacro
+	bra set_envelope		; $046c
 
 turn_handler_on:
 	inc handler_is_active
@@ -97,27 +97,37 @@ activate_voice:
 
 ; ------------------------------------------------
 ;
-;  	Set voice frequency
+;  	Set Envelope Values
 ; 	
-;   a   = voice
-;	x   = freq hi
-;   y   = freq lo
+;	x         = voice
+;   $02 - $0d = envelope values
 ;
 ; ------------------------------------------------
-set_frequency:
-    stz VERA_ctrl
-	asl 	; 
-	asl 	; a = a * 4 (voice offset)
-	sta $02
-	lda #($10 | ^VRAM_psg_voice0)  ; stride = +1
-	sta VERA_addr_bank
-	lda #>VRAM_psg_voice0
-	sta VERA_addr_high
-	lda $02
-	adc #<VRAM_psg_voice0 ; #$C0
-	sta VERA_addr_low
-	stx VERA_data0		; freq_lo
-	sty VERA_data0		; freq_hi
+set_envelope:
+    lda ZP_REGISTERS
+	sta state,X
+	lda ZP_REGISTERS+1
+	sta volume,X
+	lda ZP_REGISTERS+2
+	sta volume_fractional,X
+	lda ZP_REGISTERS+3
+	sta attack,X
+	lda ZP_REGISTERS+4
+	sta attack_fractional,X
+	lda ZP_REGISTERS+5
+	sta decay,X
+	lda ZP_REGISTERS+6
+	sta decay_fractional,x
+	lda ZP_REGISTERS+7
+	sta sustain_level,X
+	lda ZP_REGISTERS+8
+	sta sustain_timer,X
+	lda ZP_REGISTERS+9
+	sta sustain_timer_fractional,X
+	lda ZP_REGISTERS+10 
+	sta release,X
+	lda ZP_REGISTERS+11
+	sta release_fractional,X
 	rts
 
 ;----------------------------------------
@@ -258,7 +268,6 @@ update_volumes:
 ; -----------------------------------------------------------------
 ;  Variables
 ; -----------------------------------------------------------------
-;data_store:			.res 4,0  ; replaced by $02 $03 $04 $05
 default_irq_vector: .addr 0
 envelope_state: 	.addr state_idle
 					.addr state_attack
@@ -271,7 +280,10 @@ handler_is_active:	.byte 0		; OFF BY DEFAULT
 sustain_counter:			.res 8,0	; INTERNAL counters
 sustain_counter_fractional:	.res 8,0	;   for sustain timer
 ; -----------------------------------------------------------------
-
+;
+;  Everything after this point can be safely overwritten 
+;  after installation.
+;
 voice_7_test:				; 
 	ldx #7					; voice
 	lda #0					; vol

@@ -86,7 +86,7 @@ void main()
    unsigned int  loopCount = 0;
    unsigned char attack   =  0;
    unsigned char decay    =  50;
-   unsigned char sustain  =  2;
+   unsigned char sustain  =  20;
    unsigned char release  =  75;
 
    unsigned char note0 = 0;

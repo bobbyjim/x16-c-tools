@@ -12,8 +12,8 @@
 #include "utext.h"
 
 #define      VELOCITY           300
-#define      NUM_ASTEROIDS      1
-#define      NUM_SPRITES        (NUM_ASTEROIDS+1)
+#define      NUM_ASTEROIDS      32
+#define      NUM_SPRITES        (NUM_ASTEROIDS+2)
 #define      STAR_X             300
 #define      STAR_Y             220
 
@@ -65,7 +65,7 @@ void setupSprites()
    //
    //  Define the asteroid sprites
    //
-   for (i=1; i<=NUM_ASTEROIDS; ++i)
+   for (i=2; i<NUM_ASTEROIDS+2; ++i)
    {
       sprdef[i].mode              = SPRITE_MODE_8BPP;
       sprdef[i].block             = 0x5000;
@@ -109,7 +109,7 @@ void setupSprites()
    sprdef[0].layer               = SPRITE_LAYER_0;
    sprdef[0].x                   = SPRITE_X_SCALE(100);
    sprdef[0].y                   = SPRITE_Y_SCALE(100);
-   sprite_define(10, &sprdef[0]);
+   sprite_define(1, &sprdef[0]);
 }
 
 void demoZtext()
@@ -120,7 +120,7 @@ void demoZtext()
 
 void demoPSG()
 {
-   ping(8000);
+   //ping(8000);
 
    // This sounds a lot like sea travel in 7 Cities of Gold.
 
@@ -228,7 +228,7 @@ void demoSprites()
    uint8_t i;
    uint8_t ship_angle = 0;
 
-   for(i=1; i<= NUM_ASTEROIDS; ++i)
+   for(i=2; i<NUM_ASTEROIDS+2; ++i)
    {
       sprdef[i].dx = -rand() % 1000;
       sprdef[i].dy = -rand() % 100;
@@ -238,15 +238,15 @@ void demoSprites()
 
    for(;;)
    {
-      for(i = 1; i <= NUM_ASTEROIDS; ++i)
+      for(i=2; i <NUM_ASTEROIDS+2; ++i)
       {
          gravity(i, &sprdef[i]);
       }
 
       // Update ship
 
-      show_ship(10, tmp, ship_angle);
-      gravity(10, tmp);
+      show_ship(1, tmp, ship_angle);
+      gravity(1, tmp);
 
       if (kbhit()) switch (cgetc())
       {

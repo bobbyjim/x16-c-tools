@@ -67,12 +67,11 @@ ENDRUN
 }
 
 sub createMakefile {
-	my $target = shift || 'MAIN';
 	open my $fh, '>', 'Makefile' or die "Cannot createMakefile: $!";
 	print $fh <<'ENDMAKEFILE';
 SOURCES = main.c graphics.c 
 
-PROGRAM = $target
+PROGRAM = MAIN
 
 CC65_TARGET = cx16
 

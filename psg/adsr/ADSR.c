@@ -1,5 +1,6 @@
 #include <6502.h>
 #include <cbm.h>
+#include <cx16.h>
 
 #include "ADSR.h"
 
@@ -29,12 +30,11 @@ void adsr_setHandler(unsigned char handlerStatus)
 
 void adsr_setFrequency(unsigned char voice, unsigned int freq)
 {
-   struct regs my_adsr_regs;
-   my_adsr_regs.a = voice;
-   my_adsr_regs.x = (unsigned char)(freq & 0xff);
-   my_adsr_regs.y = (unsigned char)(freq >> 8);
-   my_adsr_regs.pc = ADSR_SET_FREQUENCY;
-   _sys(&my_adsr_regs);
+   VERA.control    = 0;
+   VERA.address    = 0xf9c0 + (voice * 4);
+   VERA.address_hi = VERA_INC_1 + 1;
+   VERA.data0      = freq & 0xff;
+   VERA.data0      = freq >> 8;
 }
 
 void adsr_activateVoice(unsigned char voice, unsigned char volume)

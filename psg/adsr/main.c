@@ -134,15 +134,9 @@ void main()
        // Voice 0: Handle note change
        if (prev0 != note0 && note0 < 54) {
           if (note0 == 0) {
-             // Rest - release the voice
              adsr_releaseVoice(0);
           } else {
-             // New note - set frequency and trigger attack
-             VERA.control    = 0;
-             VERA.address    = 0xf9c0;
-             VERA.address_hi = VERA_INC_1 + 1;
-             VERA.data0      = tunedNotes[note0] & 0xff;
-             VERA.data0      = tunedNotes[note0] >> 8;
+             adsr_setFrequency(0, tunedNotes[note0]);
              adsr_activateVoice(0, 63);
           }
        }
@@ -150,15 +144,9 @@ void main()
        // Voice 1: Handle note change
        if (prev1 != note1 && note1 < 54) {
           if (note1 == 0) {
-             // Rest - release the voice
              adsr_releaseVoice(1);
           } else {
-             // New note - set frequency and trigger attack
-             VERA.control    = 0;
-             VERA.address    = 0xf9c4;
-             VERA.address_hi = VERA_INC_1 + 1;
-             VERA.data0      = tunedNotes[note1] & 0xff;
-             VERA.data0      = tunedNotes[note1] >> 8;
+             adsr_setFrequency(1, tunedNotes[note1]);
              adsr_activateVoice(1, 63);
           }
        }

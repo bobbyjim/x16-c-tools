@@ -1,3 +1,17 @@
+; PSG ADSR Envelope Manager 
+; Author:		Rob Eaglestone
+;
+; Adapted from:
+;    Simplest Sound Effects Library for BASIC Programs
+;    Author:		Dusan Strakl
+;    More Info:	https://www.8bitcoding.com/p/simplest-sound-effects-library-for.html
+;
+;
+; System:		Commander X16
+; Version:		Emulator R.48
+; Compiler:		CC65
+; Build using:	cl65 -t cx16 adsr5.s -C cx16-asm.cfg -o ADSR5.PRG
+
 .org $0400
 .segment "CODE"
 

@@ -46,6 +46,11 @@ void adsr_activateVoice(unsigned char voice, unsigned char volume)
    _sys(&my_adsr_regs);
 }
 
+void adsr_releaseVoice(unsigned char voice)
+{
+   ADSR_STATE[voice] = 8; // release
+}
+
 void adsr_setState(unsigned char voice, unsigned char state)
 {
 	// 0 = idle
@@ -58,29 +63,29 @@ void adsr_setState(unsigned char voice, unsigned char state)
 
 void adsr_setAttack(unsigned char voice, unsigned char level)
 {
-   ADSR_ATTACK_FRACTIONAL[voice] = level << 4;
-   ADSR_ATTACK[voice]            = level >> 4;
+   ADSR_ATTACK_FRACTIONAL[voice] = 0;
+   ADSR_ATTACK[voice]            = level;
    //cprintf("attack : %u, %u\r\n", ADSR_ATTACK[voice], ADSR_ATTACK_FRACTIONAL[voice]);
 }
 
 void adsr_setDecay(unsigned char voice, unsigned char level, unsigned char sustain_level)
 {
-   ADSR_DECAY_FRACTIONAL[voice] = (level << 2);
-   ADSR_DECAY[voice]            = (level >> 6);
+   ADSR_DECAY_FRACTIONAL[voice] = level;
+   ADSR_DECAY[voice]            = 0;
    ADSR_SUSTAIN_LEVEL[voice]    = sustain_level & 0x3f;
    //cprintf("decay  : %u, %u\r\n", ADSR_DECAY[voice], ADSR_DECAY_FRACTIONAL[voice]);
 }
 
 void adsr_setSustain(unsigned char voice, unsigned char level)
 {
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = (level << 2);
-   ADSR_SUSTAIN_TIMER[voice]            = (level >> 6);
+   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
+   ADSR_SUSTAIN_TIMER[voice]            = level;
    //cprintf("sustain (%u): %u, %u\r\n", ADSR_SUSTAIN_LEVEL[voice], ADSR_SUSTAIN_TIMER[voice], ADSR_SUSTAIN_TIMER_FRACTIONAL[voice]);
 }
 
 void adsr_setRelease(unsigned char voice, unsigned char level)
 {
-   ADSR_RELEASE_FRACTIONAL[voice] = (level << 2);
-   ADSR_RELEASE[voice]            = (level >> 6);
+   ADSR_RELEASE_FRACTIONAL[voice] = level;
+   ADSR_RELEASE[voice]            = 0;
    //cprintf("release: %u, %u\r\n", ADSR_RELEASE[voice], ADSR_RELEASE_FRACTIONAL[voice]);
 }

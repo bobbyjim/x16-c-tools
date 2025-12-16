@@ -143,12 +143,11 @@ handler:
 state_attack:
 	plx       				; pop Voice X
 	lda attack,x 
-	ora attack_fractional,x 
+	adc attack_fractional,x 
 	beq @state_attack_done  ; attack = 0000
 	lda volume,x
 	cmp #62
 	bcs @state_attack_done  ; volume >= 62 
-	clc
 	lda volume_fractional,x ; not done
 	adc attack_fractional,x ; vol.lo+=
 	sta volume_fractional,x
@@ -166,12 +165,11 @@ state_attack:
 state_decay:
 	plx       				; pop Voice X
 	lda decay,x 
-	ora decay_fractional,x 
+	adc decay_fractional,x 
 	beq @state_decay_done
 	lda volume,x
 	cmp sustain_level,x
 	bcc @state_decay_done   ; volume < sustain_level
-	sec
 	lda volume_fractional,x ; not done
 	sbc decay_fractional,x  ; vol.lo-=
 	sta volume_fractional,x
@@ -217,7 +215,6 @@ state_sustain:
 	lda sustain_counter,x
 	cmp sustain_timer,x
 	bcs @state_sustain_done	; sustain_counter >= sustain_timer
-	clc
 	lda sustain_counter_fractional,x ; not done
 	adc #01							 ; counter.lo++
 	sta sustain_counter_fractional,x
@@ -235,7 +232,6 @@ state_release:
 	lda volume,x
 	cmp #4
 	bcc @state_release_done  ; volume < 4
-	sec
 	lda volume_fractional,x  ; not done
 	sbc release_fractional,x ; vol.lo-=
 	sta volume_fractional,x

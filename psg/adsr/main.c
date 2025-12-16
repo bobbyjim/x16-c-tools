@@ -84,10 +84,10 @@ void set_PET_font()
 void main()
 {  
    unsigned int  loopCount = 0;
-   unsigned char attack   =  0;
-   unsigned char decay    =  50;
-   unsigned char sustain  =  20;
-   unsigned char release  =  75;
+   unsigned char attack   =  2;
+   unsigned char decay    =  30;
+   unsigned char sustain  =  0;
+   unsigned char release  =  50;
 
    unsigned char note0 = 0;
    unsigned char note1 = 0;
@@ -126,45 +126,48 @@ void main()
 
    for(;;) 
    {
-       clrscr();
-       pause_jiffies( 45 - loopCount/22 );
-
        if (invention13_dualVoice[loopCount] == 255) loopCount = 0;
 
        note0 = invention13_dualVoice[loopCount];
        note1 = invention13_dualVoice[loopCount+1];
 
-       if (prev0 != note0)
-       {
-          // strange thing... if you don't do a cprintf() here, the frequencies get all messed up
-          // in the playback.  Why???
-          cprintf("%u\r\n", tunedNotes[note0]);
-          adsr_setFrequency(0, tunedNotes[note0]);
-          //VERA.control      = 0;              // port 0
-          //VERA.address      = 0xf9c0;         // voice 0
-          //VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
-          //VERA.data0        = tunedNotes[note0] & 0xff;    // freq 1
-          //VERA.data0        = tunedNotes[note0] >> 8;      // freq 2
+       // Voice 0: Handle note change
+       if (prev0 != note0 && note0 < 54) {
+          if (note0 == 0) {
+             // Rest - release the voice
+             adsr_releaseVoice(0);
+          } else {
+             // New note - set frequency and trigger attack
+             VERA.control    = 0;
+             VERA.address    = 0xf9c0;
+             VERA.address_hi = VERA_INC_1 + 1;
+             VERA.data0      = tunedNotes[note0] & 0xff;
+             VERA.data0      = tunedNotes[note0] >> 8;
+             adsr_activateVoice(0, 63);
+          }
        }
 
-       if (prev1 != note1)
-       {
-          // strange thing... if you don't do a cprintf() here, the frequencies get all messed up
-          // in the playback.  Why???
-          cprintf("%u\r\n", tunedNotes[note1]);
-          adsr_setFrequency(1, tunedNotes[note1]);
-          //VERA.control      = 0;              // port 0
-          //VERA.address      = 0xf9c4;         // voice 1
-          //VERA.address_hi   = VERA_INC_1 + 1; // from cx16.h
-          //VERA.data0        = tunedNotes[note1] & 0xff;    // freq 1
-          //VERA.data0        = tunedNotes[note1] >> 8;      // freq 2
+       // Voice 1: Handle note change
+       if (prev1 != note1 && note1 < 54) {
+          if (note1 == 0) {
+             // Rest - release the voice
+             adsr_releaseVoice(1);
+          } else {
+             // New note - set frequency and trigger attack
+             VERA.control    = 0;
+             VERA.address    = 0xf9c4;
+             VERA.address_hi = VERA_INC_1 + 1;
+             VERA.data0      = tunedNotes[note1] & 0xff;
+             VERA.data0      = tunedNotes[note1] >> 8;
+             adsr_activateVoice(1, 63);
+          }
        }
-       loopCount += 2;
-
-       if (prev0 != note0 && note0 < 54) adsr_activateVoice(0,63);
-       if (prev1 != note1 && note1 < 54) adsr_activateVoice(1,63);
 
        prev0 = note0;
        prev1 = note1;
+       loopCount += 2;
+
+       // Wait for next note (consistent timing)
+       pause_jiffies(30);
    }
 }

@@ -38,6 +38,7 @@ void adsr_setSustain(unsigned char voice, unsigned char level);
 void adsr_setRelease(unsigned char voice, unsigned char level);
 
 void adsr_activateVoice(unsigned char voice, unsigned char volume);
+void adsr_releaseVoice(unsigned char voice);
 void adsr_setHandler(unsigned char on);
 void adsr_install();
 

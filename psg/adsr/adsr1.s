@@ -40,13 +40,13 @@ IRQVec          = $0314		; RAM Interrupt Vector
 	sta ZP_REGISTERS+29; data_store+1		; try: pha
 	lda VERA_addr_bank
 	sta ZP_REGISTERS+30; data_store+2		; try: pha
-	lda VERA_ctrl
-	sta ZP_REGISTERS+31; data_store+3		; try: pha
+;	lda VERA_ctrl  							; we don't actually mess with VERA_ctrl
+;	sta ZP_REGISTERS+31; data_store+3		; try: pha
 .endmacro
 
 .macro RESTORE_VERA_REGISTERS
-	lda ZP_REGISTERS+31; data_store+3		; try: plp
-	sta VERA_ctrl
+;	lda ZP_REGISTERS+31; data_store+3		; try: plp
+;	sta VERA_ctrl
 	lda ZP_REGISTERS+30; data_store+2		; try: plp
 	sta VERA_addr_bank
 	lda ZP_REGISTERS+29; data_store+1		; try: plp

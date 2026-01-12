@@ -36,6 +36,7 @@ void adsr_setAttack(unsigned char voice, unsigned char level);
 void adsr_setDecay(unsigned char voice, unsigned char level, unsigned char sustain_level);
 void adsr_setSustain(unsigned char voice, unsigned char level);
 void adsr_setRelease(unsigned char voice, unsigned char level);
+void adsr_setEnvelope(unsigned char voice, unsigned char attack, unsigned char decay, unsigned char sustain_level, unsigned char sustain_timer_fractional, unsigned char release);
 
 void adsr_activateVoice(unsigned char voice, unsigned char volume);
 void adsr_releaseVoice(unsigned char voice);

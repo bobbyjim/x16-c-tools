@@ -97,3 +97,11 @@ void adsr_setRelease(unsigned char voice, unsigned char level)
    ADSR_RELEASE[voice]            = 0;
    //cprintf("release: %u, %u\r\n", ADSR_RELEASE[voice], ADSR_RELEASE_FRACTIONAL[voice]);
 }
+
+void adsr_setEnvelope(unsigned char voice, unsigned char attack, unsigned char decay, unsigned char sustain_level, unsigned char sustain_timer_fractional, unsigned char release)
+{
+   adsr_setAttack(    voice, attack);
+   adsr_setDecay(     voice, decay, sustain_level);
+   adsr_setSustain(   voice, sustain_timer_fractional);
+   adsr_setRelease(   voice, release);
+}

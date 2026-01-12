@@ -35,23 +35,23 @@ IRQVec          = $0314		; RAM Interrupt Vector
 
 .macro SAVE_VERA_REGISTERS
 	lda VERA_addr_low
-	sta ZP_REGISTERS+16; data_store			; try: pha
+	sta ZP_REGISTERS+28; data_store			; try: pha
 	lda VERA_addr_high
-	sta ZP_REGISTERS+17; data_store+1		; try: pha
+	sta ZP_REGISTERS+29; data_store+1		; try: pha
 	lda VERA_addr_bank
-	sta ZP_REGISTERS+18; data_store+2		; try: pha
+	sta ZP_REGISTERS+30; data_store+2		; try: pha
 	lda VERA_ctrl
-	sta ZP_REGISTERS+19; data_store+3		; try: pha
+	sta ZP_REGISTERS+31; data_store+3		; try: pha
 .endmacro
 
 .macro RESTORE_VERA_REGISTERS
-	lda ZP_REGISTERS+19; data_store+3		; try: plp
+	lda ZP_REGISTERS+31; data_store+3		; try: plp
 	sta VERA_ctrl
-	lda ZP_REGISTERS+18; data_store+2		; try: plp
+	lda ZP_REGISTERS+30; data_store+2		; try: plp
 	sta VERA_addr_bank
-	lda ZP_REGISTERS+17; data_store+1		; try: plp
+	lda ZP_REGISTERS+29; data_store+1		; try: plp
 	sta VERA_addr_high
-	lda ZP_REGISTERS+16; data_store			; try: plp
+	lda ZP_REGISTERS+28; data_store			; try: plp
 	sta VERA_addr_low
 .endmacro
 
@@ -85,7 +85,7 @@ release_fractional: 		.byte   0,  0,  0,  0,    0,  0,  0, 20
 	jmp voice_7_test		; $0465
 	bra turn_handler_off	; $0468 
 	bra turn_handler_on		; $046a 
-	bra set_envelope		; $046c
+;	bra set_envelope		; $046c			; removed for now
 
 turn_handler_on:
 	inc handler_is_active
@@ -119,32 +119,26 @@ activate_voice:
 ;   $02 - $0d = envelope values
 ;
 ; ------------------------------------------------
-set_envelope:
-    lda ZP_REGISTERS
-	sta state,X
-	lda ZP_REGISTERS+1
-	sta volume,X
-	lda ZP_REGISTERS+2
-	sta volume_fractional,X
-	lda ZP_REGISTERS+3
-	sta attack,X
-	lda ZP_REGISTERS+4
-	sta attack_fractional,X
-	lda ZP_REGISTERS+5
-	sta decay,X
-	lda ZP_REGISTERS+6
-	sta decay_fractional,x
-	lda ZP_REGISTERS+7
-	sta sustain_level,X
-	lda ZP_REGISTERS+8
-	sta sustain_timer,X
-	lda ZP_REGISTERS+9
-	sta sustain_timer_fractional,X
-	lda ZP_REGISTERS+10 
-	sta release,X
-	lda ZP_REGISTERS+11
-	sta release_fractional,X
-	rts
+;set_envelope:
+;	lda ZP_REGISTERS
+;	sta attack,X
+;	lda ZP_REGISTERS+1
+;	sta attack_fractional,X
+;	lda ZP_REGISTERS+2
+;	sta decay,X
+;	lda ZP_REGISTERS+3
+;	sta decay_fractional,x
+;	lda ZP_REGISTERS+4
+;	sta sustain_level,X
+;	lda ZP_REGISTERS+5
+;	sta sustain_timer,X
+;	lda ZP_REGISTERS+6
+;	sta sustain_timer_fractional,X
+;	lda ZP_REGISTERS+7 
+;	sta release,X
+;	lda ZP_REGISTERS+8
+;	sta release_fractional,X
+;	rts
 
 ;----------------------------------------
 handler:					

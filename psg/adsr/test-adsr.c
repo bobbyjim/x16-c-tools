@@ -1,12 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <unistd.h>
 #include <conio.h>
 #include <6502.h>
+#include <cbm.h>
 #include <cx16.h>
 
 #include "ADSR.h"
-#include "timer.h"
 
 #define STEREO_VOLUME(vol)      (vol + 196)
 
@@ -108,7 +109,7 @@ void main()
    cprintf("enabling adsr handler...\r\n");
    adsr_setHandler(ADSR_ON);
    
-   pause_jiffies(60);
+   sleep(1);
    
    display_menu();
    
@@ -218,6 +219,6 @@ void main()
          }
       }
       
-      pause_jiffies(2);
+      waitvsync();
    }
 }

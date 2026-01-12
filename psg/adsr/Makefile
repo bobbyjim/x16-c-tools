@@ -1,5 +1,5 @@
 SOURCES = main.c ADSR.c timer.c
-TEST_SOURCES = test-adsr.c ADSR.c timer.c
+TEST_SOURCES = test-adsr.c ADSR.c
 
 PROGRAM = MAIN
 TEST_PROGRAM = TEST-ADSR

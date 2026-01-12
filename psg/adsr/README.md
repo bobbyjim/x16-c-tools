@@ -1,6 +1,49 @@
 # Commander X16 ADSR Envelope Library
 
-A high-performance ADSR (Attack, Decay, Sustain, Release) envelope generator for the Commander X16's PSG audio chip. Runs in IRQ handler for smooth, automatic volume control across the first 8 PSG voices.
+A high-performance ADSR (Attack, Decay, Sustain, Release) envelope generator for the Commander X16's PSG audio chip. Runs in an IRQ handler for smooth, automatic volume control across the first 8 PSG voices.
+
+## Embedding Guide (Quick Start)
+
+Use this checklist to embed the ADSR library into your project:
+
+1. Place `adsr1.prg` on device 8 (the C API loads from dev 8).
+2. Add `ADSR.c` and `ADSR.h` to your build, and include them in your C sources.
+3. On startup, call `adsr_install();` then `adsr_setHandler(ADSR_ON);`.
+4. Configure VERA PSG voice registers (frequency, L/R volume bits, waveform).
+5. Set per-voice ADSR parameters:
+    - `adsr_setAttack(voice, attack_rate);`
+    - `adsr_setDecay(voice, decay_rate, sustain_level_0_63);`
+    - `adsr_setSustain(voice, sustain_timer);` (duration; 0 means manual note-off)
+    - `adsr_setRelease(voice, release_rate);`
+6. Trigger notes with `adsr_activateVoice(voice, 63);` and end notes with `adsr_releaseVoice(voice);`.
+
+Example minimal setup:
+
+```c
+// Install and enable
+adsr_install();
+adsr_setHandler(ADSR_ON);
+
+// Configure voice 0 PSG
+VERA.control    = 0;
+VERA.address    = 0xf9c0;              // voice 0
+VERA.address_hi = VERA_INC_1 + 1;
+VERA.data0      = freq & 0xff;         // frequency low
+VERA.data0      = freq >> 8;           // frequency high
+VERA.data0      = 0xC0;                // L/R enable (volume controlled by ADSR)
+VERA.data0      = 0x3F;                // waveform (pulse)
+
+// ADSR params
+adsr_setAttack(0, 2);
+adsr_setDecay(0, 30, 40);   // decay to level 40
+adsr_setSustain(0, 0);      // hold (manual release)
+adsr_setRelease(0, 50);
+
+// Play and stop
+adsr_activateVoice(0, 63);
+pause_jiffies(30);
+adsr_releaseVoice(0);
+```
 
 ## Features
 
@@ -42,6 +85,10 @@ void main() {
 - `ADSR.h` - C header file
 - `ADSR.c` - C wrapper functions
 - `timer.h` / `timer.c` - Timing utilities
+
+Optional (examples/tests):
+- `test-adsr.c` - Interactive single-note ADSR tester
+- `main.c` - Dual-voice music demo (Invention 13)
 
 ## API Reference
 
@@ -116,7 +163,9 @@ Triggers the attack phase for a voice. Sets initial volume and begins the ADSR c
 - `voice` - Voice number (0-7)
 - `volume` - Target peak volume (0-63, typically use 63)
 
-**Note:** Set frequency via VERA before calling this.
+**Notes:**
+- Set frequency via VERA before calling this.
+- Current implementation starts at volume 0 and ramps to 63 during attack; the `volume` parameter is reserved for future use (treated as target peak but not enforced yet).
 
 #### `void adsr_releaseVoice(unsigned char voice)`
 Manually triggers the release phase (note-off). Volume will decay to 0 according to release rate.
@@ -244,7 +293,10 @@ For 48kHz: freq_value = note_freq_hz × 1920 / 1000
 ## Technical Notes
 
 ### IRQ Timing
-The library processes all 8 voices every IRQ (60Hz NTSC / 50Hz PAL). Each voice takes ~50-80 cycles depending on state.
+- Default behavior: runs envelopes at the system IRQ rate (typically 60Hz NTSC / 50Hz PAL).
+- Optional mode (configured in `adsr1.s`): 30Hz gating with double-stepping. The handler skips every other frame but calls `run_states` and `update_volumes` twice on active frames, preserving effective 60 envelope steps/sec while reducing IRQ traffic.
+    - To enable: keep the `frame_counter` gating and the doubled calls.
+    - To disable (full 60Hz): remove the gating and single-step.
 
 ### Carry Flag Fix
 Version 2024-12-15 fixed critical carry flag bugs in the state machine. Always use `clc` before `adc` and `sec` before `sbc`.
@@ -255,13 +307,10 @@ Version 2024-12-15 fixed critical carry flag bugs in the state machine. Always u
 - Sustain level is 6-bit (0-63)
 
 ### Testing
-Run `TEST-ADSR` program for comprehensive envelope verification. Tests cover:
-- Fast/slow attack
-- Decay to sustain
-- Sustain hold and timer
-- Quick/slow release  
-- State transitions
-- Retriggering
+Run `TEST-ADSR` program (interactive single-note tester) to audition waveforms and ADSR parameters in real time:
+- Change waveform, frequency, and ADSR values from the keyboard
+- Trigger notes to hear envelope behavior
+- Adjust sustain level and sustain timer (or fractional) independently
 
 ## Troubleshooting
 
@@ -276,7 +325,7 @@ Run `TEST-ADSR` program for comprehensive envelope verification. Tests cover:
 - Check for proper note-off (call `adsr_releaseVoice()` before new note)
 
 **Wrong tempo:**
-- IRQ runs at 60Hz, so `pause_jiffies(30)` = 0.5 seconds
+- IRQ runs at 60Hz, so `pause_jiffies(30)` ≈ 0.5 seconds (NTSC).
 - Adjust note duration to taste
 
 **Volume too quiet:**
@@ -290,5 +339,5 @@ See LICENSE file in project root.
 ## Version History
 
 - **2024-12-15**: Fixed carry flag handling in state machine (critical bug fix)
-- **2024-12-15**: Added comprehensive test suite
+- **2024-12-15**: Added interactive single-note tester
 - **2024-12-15**: Improved C API and documentation

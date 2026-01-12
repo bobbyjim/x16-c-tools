@@ -204,8 +204,7 @@ state_decay:
 	sta sustain_counter_fractional,y
     lda sustain_level,y 
 	sta volume,y
-	rts
-
+;	rts					fall through to state_idle's rts
 state_idle:
 	rts
 

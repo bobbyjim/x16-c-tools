@@ -2,498 +2,222 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <conio.h>
+#include <6502.h>
 #include <cx16.h>
 
 #include "ADSR.h"
 #include "timer.h"
 
-#define MIDDLE_C 702
+#define STEREO_VOLUME(vol)      (vol + 196)
 
-// Test waveforms
-#define PSG_WAVE_PULSE      63
-#define PSG_WAVE_SAWTOOTH   (1 << 6)
-#define PSG_WAVE_TRIANGLE   (2 << 6)
-#define PSG_WAVE_NOISE      (3 << 6)
+// Waveforms
+#define PSG_WAVE_SQUARE         63
+#define PSG_WAVE_SAWTOOTH       (1 << 6)
+#define PSG_WAVE_TRIANGLE       (2 << 6)
+#define PSG_WAVE_NOISE          (3 << 6)
 
-// Test state
-unsigned char g_test_count = 0;
-unsigned char g_test_passed = 0;
-unsigned char g_test_failed = 0;
+// Note frequencies
+unsigned int tunedNotes[] = {
+    0,    186,  197,  208,  221,  234,  248,  263,  278,  295,  312,  331,  // 0-11
+    351,  372,  394,  417,  442,  468,  496,  526,  557,  590,  625,  662,  // 12-23
+    702,  744,  788,  835,  884,  937,  993,  1052, 1114, 1181, 1251, 1325, // 24-35
+    1404, 1488, 1576, 1670, 1769, 1875, 1986, 2104, 2229, 2362, 2502, 2651, // 36-47
+    2809, 2976, 3153, 3340, 3539, 3750                                       // 48-53
+};
 
-// Helper: Set up a voice with frequency and waveform
-void setup_voice(unsigned char voice, unsigned int freq, unsigned char waveform)
+// Test parameters
+unsigned char wave_index = 2;  // 0=square, 1=sawtooth, 2=triangle, 3=noise
+unsigned char note_index = 35; // F4
+unsigned char attack   = 5;
+unsigned char decay    = 30;
+unsigned char sustain_level = 40;  // volume to decay to
+unsigned char sustain_timer_fractional = 100; // fractional sustain duration
+unsigned char release  = 50;
+
+const char* waveforms[] = {"square", "sawtooth", "triangle", "noise"};
+unsigned char wave_values[] = {PSG_WAVE_SQUARE, PSG_WAVE_SAWTOOTH, PSG_WAVE_TRIANGLE, PSG_WAVE_NOISE};
+
+void set_PET_font()
 {
-   VERA.control    = 0;
-   VERA.address    = 0xf9c0 + (voice * 4);
-   VERA.address_hi = VERA_INC_1 + 1;
-   VERA.data0      = freq & 0xff;
-   VERA.data0      = freq >> 8;
-   VERA.data0      = 0xC0;  // L/R, vol will be controlled by ADSR
-   VERA.data0      = waveform;
+   struct regs fontregs;
+   fontregs.a = 4; // PET-like
+   fontregs.pc = 0xff62;
+   _sys(&fontregs);
 }
 
-// Helper: Print test header
-void test_start(const char* name, const char* waveform)
+void display_menu()
 {
-   g_test_count++;
-   printf("\r\n[TEST %u] %s (%s)...\r\n", g_test_count, name, waveform);
-}
-
-// Helper: Check if value is in expected range
-unsigned char check_range(unsigned char value, unsigned char min, unsigned char max, const char* label)
-{
-   if (value >= min && value <= max) {
-      printf("  %s: %u [%u-%u] OK\r\n", label, value, min, max);
-      return 1;
-   } else {
-      printf("  %s: %u [expected %u-%u] FAIL\r\n", label, value, min, max);
-      return 0;
-   }
-}
-
-// Helper: Check exact value
-unsigned char check_value(unsigned char value, unsigned char expected, const char* label)
-{
-   if (value == expected) {
-      printf("  %s: %u OK\r\n", label, value);
-      return 1;
-   } else {
-      printf("  %s: %u [expected %u] FAIL\r\n", label, value, expected);
-      return 0;
-   }
-}
-
-// Helper: Report test result
-void test_result(unsigned char passed)
-{
-   if (passed) {
-      printf("  RESULT: PASS\r\n");
-      g_test_passed++;
-   } else {
-      printf("  RESULT: FAIL\r\n");
-      g_test_failed++;
-   }
-}
-
-// TEST 1: Fast Attack - volume should ramp up quickly
-void test_fast_attack()
-{
-   unsigned char voice = 0;
-   unsigned char passed = 1;
+   gotoxy(0, 0);
+   clrscr();
    
-   test_start("Fast Attack", "Pulse");
+   cprintf("single note adsr tester\r\n");
+   cprintf("=======================\r\n\r\n");
    
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_PULSE);
+   cprintf("waveform: %s (w=cycle)\r\n", waveforms[wave_index]);
+   cprintf("frequency: note %d (%u hz)  (h/n)\r\n", note_index, tunedNotes[note_index]);
+   cprintf("\r\n");
+   cprintf("attack:         %3d  (a/z)\r\n", attack);
+   cprintf("decay:          %3d  (s/x)\r\n", decay);
+   cprintf("sustain level:  %3d  (d/c)\r\n", sustain_level);
+   cprintf("sustain frac:   %3d  (f/v)\r\n", sustain_timer_fractional);
+   cprintf("release:        %3d  (g/b)\r\n", release);
+   cprintf("\r\n");
+   cprintf("space: trigger note\r\n");
+   cprintf("q: quit\r\n");
+}
+
+void trigger_note()
+{
+   // Set frequency
+   adsr_setFrequency(0, tunedNotes[note_index]);
    
-   // Configure: fast attack (4), no decay, no sustain timer, slow release
-   ADSR_ATTACK[voice] = 4;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 0;
-   ADSR_SUSTAIN_LEVEL[voice] = 63;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 50;
+   // Set ADSR parameters
+   adsr_setAttack(0, attack);
+   adsr_setDecay(0, decay, sustain_level);  // decay speed and target level
+   adsr_setSustain(0, sustain_timer_fractional);  // fractional sustain duration
+   adsr_setRelease(0, release);
    
    // Activate voice
-   adsr_activateVoice(voice, 63);
-   passed &= check_value(ADSR_STATE[voice], 2, "Initial state (Attack)");
-   
-   // Wait a bit and check volume is increasing
-   pause_jiffies(10);
-   passed &= check_range(ADSR_VOLUME[voice], 20, 63, "Volume after 10 jiffies");
-   
-   // Wait more, should reach max and enter decay
-   pause_jiffies(20);
-   passed &= check_value(ADSR_VOLUME[voice], 63, "Volume at peak");
-   passed &= check_value(ADSR_STATE[voice], 4, "State after peak (Decay)");
-   
-   // Should quickly hit sustain since decay=0
-   pause_jiffies(5);
-   passed &= check_value(ADSR_STATE[voice], 6, "State after decay (Sustain)");
-   
-   // Release voice
-   adsr_releaseVoice(voice);
-   passed &= check_value(ADSR_STATE[voice], 8, "State after release");
-   
-   // Wait and check volume decreasing
-   pause_jiffies(20);
-   passed &= check_range(ADSR_VOLUME[voice], 1, 55, "Volume during release");
-   
-   // Wait for voice to go silent
-   pause_jiffies(50);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-   
-   test_result(passed);
+   adsr_activateVoice(0, 63);
 }
 
-// TEST 2: Slow Decay - volume should gradually decrease to sustain level
-void test_slow_decay()
+void setup_voice()
 {
-   unsigned char voice = 1;
-   unsigned char passed = 1;
-   
-   test_start("Slow Decay", "Sawtooth");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_SAWTOOTH);
-   
-   // Configure: fast attack, slow decay to level 40
-   ADSR_ATTACK[voice] = 4;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 50;
-   ADSR_SUSTAIN_LEVEL[voice] = 40;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 50;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Should quickly hit peak
-   pause_jiffies(20);
-   passed &= check_value(ADSR_VOLUME[voice], 63, "Volume at peak");
-   passed &= check_value(ADSR_STATE[voice], 4, "State (Decay)");
-   
-   // Check decay in progress
-   pause_jiffies(20);
-   passed &= check_range(ADSR_VOLUME[voice], 45, 62, "Volume during decay");
-   passed &= check_value(ADSR_STATE[voice], 4, "Still in Decay");
-   
-   // Wait longer, should reach sustain level
-   pause_jiffies(60);
-   passed &= check_value(ADSR_VOLUME[voice], 40, "Volume at sustain level");
-   passed &= check_value(ADSR_STATE[voice], 6, "State (Sustain)");
-   
-   // Release
-   adsr_releaseVoice(voice);
-   pause_jiffies(5);
-   passed &= check_value(ADSR_STATE[voice], 8, "State (Release)");
-   
-   // Wait for voice to go silent
-   pause_jiffies(50);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-   
-   test_result(passed);
-}
-
-// TEST 3: Sustain Hold - should stay at sustain level until timer expires
-void test_sustain_hold()
-{
-   unsigned char voice = 2;
-   unsigned char passed = 1;
-   
-   test_start("Sustain Hold", "Triangle");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_TRIANGLE);
-   
-   // Configure: fast attack, no decay, sustain at 50 for ~30 jiffies, then release
-   ADSR_ATTACK[voice] = 4;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 0;
-   ADSR_SUSTAIN_LEVEL[voice] = 50;
-   ADSR_SUSTAIN_TIMER[voice] = 30;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 50;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Should hit sustain quickly
-   pause_jiffies(20);
-   passed &= check_value(ADSR_STATE[voice], 6, "State (Sustain)");
-   passed &= check_value(ADSR_VOLUME[voice], 50, "Volume at sustain");
-   
-   // Wait 15 jiffies, should still be sustaining
-   pause_jiffies(15);
-   passed &= check_value(ADSR_STATE[voice], 6, "Still Sustaining");
-   passed &= check_value(ADSR_VOLUME[voice], 50, "Volume unchanged");
-   
-   // Wait another 20 jiffies, timer should expire and enter release
-   pause_jiffies(20);
-   passed &= check_value(ADSR_STATE[voice], 8, "State (Auto-Release)");
-   
-   // Check volume decreasing
-   pause_jiffies(10);
-   passed &= check_range(ADSR_VOLUME[voice], 1, 45, "Volume during release");
-   
-   // Wait for voice to go silent
-   pause_jiffies(50);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-   
-   test_result(passed);
-}
-
-// TEST 4: Quick Release - volume should drop to 0 quickly
-void test_quick_release()
-{
-   unsigned char voice = 3;
-   unsigned char passed = 1;
-   
-   test_start("Quick Release", "Pulse");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_PULSE);
-   
-   // Configure: fast attack, fast release
-   ADSR_ATTACK[voice] = 4;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 0;
-   ADSR_SUSTAIN_LEVEL[voice] = 63;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 4;
-   ADSR_RELEASE_FRACTIONAL[voice] = 0;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Reach sustain
-   pause_jiffies(20);
-   passed &= check_value(ADSR_STATE[voice], 6, "State (Sustain)");
-   
-   // Release
-   adsr_releaseVoice(voice);
-   passed &= check_value(ADSR_STATE[voice], 8, "State (Release)");
-   
-   // Wait a bit, volume should drop quickly
-   pause_jiffies(10);
-   passed &= check_range(ADSR_VOLUME[voice], 20, 55, "Volume after quick release");
-   
-   // Wait more, should be silent and idle
-   pause_jiffies(20);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Volume at 0");
-   passed &= check_value(ADSR_STATE[voice], 0, "State (Idle)");
-   
-   test_result(passed);
-}
-
-// TEST 5: Full Cycle - complete ADSR cycle
-void test_full_cycle()
-{
-   unsigned char voice = 4;
-   unsigned char passed = 1;
-   
-   test_start("Full Cycle", "Sawtooth");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_SAWTOOTH);
-   
-   // Configure: moderate attack, decay, sustain, release
-   ADSR_ATTACK[voice] = 2;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 50;
-   ADSR_SUSTAIN_LEVEL[voice] = 35;
-   ADSR_SUSTAIN_TIMER[voice] = 15;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 80;
-   
-   adsr_activateVoice(voice, 63);
-   passed &= check_value(ADSR_STATE[voice], 2, "State (Attack)");
-   
-   // Attack phase
-   pause_jiffies(15);
-   passed &= check_value(ADSR_STATE[voice], 4, "State (Decay)");
-   
-   // Decay phase
-   pause_jiffies(20);
-   passed &= check_value(ADSR_STATE[voice], 6, "State (Sustain)");
-   passed &= check_value(ADSR_VOLUME[voice], 35, "Volume at sustain");
-   
-   // Sustain phase
-   pause_jiffies(10);
-   passed &= check_value(ADSR_STATE[voice], 6, "Still Sustaining");
-   
-   // Wait for auto-release
-   pause_jiffies(10);
-   passed &= check_value(ADSR_STATE[voice], 8, "State (Auto-Release)");
-   
-   // Release phase
-   pause_jiffies(20);
-   passed &= check_range(ADSR_VOLUME[voice], 0, 20, "Volume during release");
-   
-   // Complete
-   pause_jiffies(30);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-   
-   test_result(passed);
-}
-
-// TEST 6: Retrigger During Attack - new attack should restart
-void test_retrigger_attack()
-{
-   unsigned char voice = 5;
-   unsigned char passed = 1;
-   unsigned char vol1, vol2;
-   
-   test_start("Retrigger During Attack", "Triangle");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_TRIANGLE);
-   
-   // Configure: slow attack
-   ADSR_ATTACK[voice] = 1;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 0;
-   ADSR_SUSTAIN_LEVEL[voice] = 63;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 50;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Let it attack partway
-   pause_jiffies(15);
-   passed &= check_value(ADSR_STATE[voice], 2, "State (Attack)");
-   vol1 = ADSR_VOLUME[voice];
-   passed &= check_range(vol1, 10, 45, "Partial attack volume");
-   
-   // Retrigger
-   adsr_activateVoice(voice, 63);
-   passed &= check_value(ADSR_STATE[voice], 2, "State still Attack");
-   vol2 = ADSR_VOLUME[voice];
-   
-   // Volume should have increased or stayed similar (not dropped)
-   if (vol2 >= vol1 - 5) {
-      printf("  Retrigger preserved volume: %u->%u OK\r\n", vol1, vol2);
-   } else {
-      printf("  Retrigger dropped volume: %u->%u FAIL\r\n", vol1, vol2);
-      passed = 0;
-   }
-   
-   // Should continue attacking
-   pause_jiffies(25);
-   passed &= check_value(ADSR_VOLUME[voice], 63, "Reached peak after retrigger");
-      // Clean up - release and wait for silence
-   adsr_releaseVoice(voice);
-   pause_jiffies(50);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-      test_result(passed);
-}
-
-// TEST 7: Release During Decay - manual release should work
-void test_release_during_decay()
-{
-   unsigned char voice = 6;
-   unsigned char passed = 1;
-   
-   test_start("Release During Decay", "Noise");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_NOISE);
-   
-   // Configure: fast attack, slow decay
-   ADSR_ATTACK[voice] = 8;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 80;
-   ADSR_SUSTAIN_LEVEL[voice] = 20;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 1;
-   ADSR_RELEASE_FRACTIONAL[voice] = 0;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Wait for decay phase
-   pause_jiffies(12);
-   passed &= check_value(ADSR_STATE[voice], 4, "State (Decay)");
-   passed &= check_range(ADSR_VOLUME[voice], 30, 62, "Volume during decay");
-   
-   // Manually release during decay
-   adsr_releaseVoice(voice);
-   passed &= check_value(ADSR_STATE[voice], 8, "State (Release)");
-   
-   // Should continue to 0
-   pause_jiffies(25);
-   passed &= check_range(ADSR_VOLUME[voice], 0, 10, "Volume after release");
-      // Wait for complete silence
-   pause_jiffies(30);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-      test_result(passed);
-}
-
-// TEST 8: Zero Attack - should jump to full volume immediately
-void test_zero_attack()
-{
-   unsigned char voice = 7;
-   unsigned char passed = 1;
-   
-   test_start("Zero Attack (Instant)", "Pulse");
-   
-   setup_voice(voice, MIDDLE_C, PSG_WAVE_PULSE);
-   
-   // Configure: zero attack
-   ADSR_ATTACK[voice] = 0;
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_DECAY[voice] = 0;
-   ADSR_DECAY_FRACTIONAL[voice] = 50;
-   ADSR_SUSTAIN_LEVEL[voice] = 50;
-   ADSR_SUSTAIN_TIMER[voice] = 0;
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_RELEASE[voice] = 0;
-   ADSR_RELEASE_FRACTIONAL[voice] = 50;
-   
-   adsr_activateVoice(voice, 63);
-   
-   // Should immediately jump to decay
-   pause_jiffies(3);
-   passed &= check_value(ADSR_STATE[voice], 4, "State (Decay) - skipped attack");
-   passed &= check_value(ADSR_VOLUME[voice], 63, "Volume at peak immediately");
-   
-   // Should decay
-   pause_jiffies(15);
-   passed &= check_range(ADSR_VOLUME[voice], 50, 62, "Volume during decay");
-   
-   // Clean up - release and wait for silence
-   adsr_releaseVoice(voice);
-   pause_jiffies(50);
-   passed &= check_value(ADSR_VOLUME[voice], 0, "Final volume");
-   passed &= check_value(ADSR_STATE[voice], 0, "Final state (Idle)");
-   
-   test_result(passed);
+   VERA.control      = 0;
+   VERA.address      = 0xf9c0;        // voice 0
+   VERA.address_hi   = VERA_INC_1 + 1;
+   VERA.data0        = 0;              // freq lo
+   VERA.data0        = 0;              // freq hi
+   VERA.data0        = STEREO_VOLUME(30);  // volume
+   VERA.data0        = wave_values[wave_index];  // waveform
 }
 
 void main()
 {
-   printf("\r\n=== ADSR Test Suite ===\r\n");
-   printf("Loading ADSR library...\r\n");
+   unsigned char key;
    
+   set_PET_font();
+   clrscr();
+   
+   cprintf("loading adsr library...\r\n");
    adsr_install();
+   
+   cprintf("initializing voice...\r\n");
+   setup_voice();
+   
+   cprintf("enabling adsr handler...\r\n");
    adsr_setHandler(ADSR_ON);
    
-   printf("Starting tests...\r\n");
+   pause_jiffies(60);
    
-   // Run all tests
-   test_fast_attack();
-   test_slow_decay();
-   test_sustain_hold();
-   test_quick_release();
-   test_full_cycle();
-   test_retrigger_attack();
-   test_release_during_decay();
-   test_zero_attack();
+   display_menu();
    
-   // Summary
-   printf("\r\n=== SUMMARY ===\r\n");
-   printf("Total Tests: %u\r\n", g_test_count);
-   printf("Passed: %u\r\n", g_test_passed);
-   printf("Failed: %u\r\n", g_test_failed);
-   
-   if (g_test_failed == 0) {
-      printf("\r\nALL TESTS PASSED!\r\n");
-   } else {
-      printf("\r\nSOME TESTS FAILED!\r\n");
+   while (1) {
+      if (kbhit()) {
+         key = cgetc();
+         
+         switch (key) {
+            case 'q':
+            case 'Q':
+               clrscr();
+               return;
+            
+            case ' ':
+               trigger_note();
+               break;
+            
+            // Waveform cycle
+            case 'w':
+            case 'W':
+               wave_index = (wave_index + 1) & 3;
+               setup_voice();
+               display_menu();
+               break;
+            
+            // Frequency up/down
+            case 'h':
+            case 'H':
+               if (note_index < 53) note_index++;
+               display_menu();
+               break;
+            case 'n':
+            case 'N':
+               if (note_index > 0) note_index--;
+               display_menu();
+               break;
+            
+            // Attack up/down
+            case 'A':
+               if (attack < 255) attack++;
+            case 'a':
+               if (attack < 255) attack++;
+               display_menu();
+               break;
+            case 'Z':
+               if (attack > 0) attack--;
+            case 'z':
+               if (attack > 0) attack--;
+               display_menu();
+               break;
+            
+            // Decay up/down
+            case 'S':
+               if (decay < 255) decay++;
+            case 's':
+               if (decay < 255) decay++;
+               display_menu();
+               break;
+            case 'X':
+               if (decay > 0) decay--;
+            case 'x':
+               if (decay > 0) decay--;
+               display_menu();
+               break;
+            
+            // Sustain level up/down
+            case 'D':
+               if (sustain_level < 63) sustain_level++;
+            case 'd':
+               if (sustain_level < 63) sustain_level++;
+               display_menu();
+               break;
+            case 'C':
+               if (sustain_level > 0) sustain_level--;
+            case 'c':
+               if (sustain_level > 0) sustain_level--;
+               display_menu();
+               break;
+            
+            // Sustain timer fractional up/down
+            case 'F':
+               if (sustain_timer_fractional < 255) sustain_timer_fractional++;
+            case 'f':
+               if (sustain_timer_fractional < 255) sustain_timer_fractional++;
+               display_menu();
+               break;
+            case 'V':
+               if (sustain_timer_fractional > 0) sustain_timer_fractional--;
+            case 'v':
+               if (sustain_timer_fractional > 0) sustain_timer_fractional--;
+               display_menu();
+               break;
+            
+            // Release up/down
+            case 'G':
+               if (release < 255) release++;
+            case 'g':
+               if (release < 255) release++;
+               display_menu();
+               break;
+            case 'B':
+               if (release > 0) release--;
+            case 'b':
+               if (release > 0) release--;
+               display_menu();
+               break;
+         }
+      }
+      
+      pause_jiffies(2);
    }
-   
-   printf("\r\nPress any key to exit...\r\n");
-   cgetc();
 }

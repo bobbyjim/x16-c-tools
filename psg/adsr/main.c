@@ -84,10 +84,11 @@ void set_PET_font()
 void main()
 {  
    unsigned int  loopCount = 0;
-   unsigned char attack   =  2;
-   unsigned char decay    =  30;
-   unsigned char sustain  =  0;
-   unsigned char release  =  50;
+   unsigned char attack   =  255;      // ramp-up speed (0-255)
+   unsigned char decay    =  255;     // ramp-down speed to sustain level
+   unsigned char sustain_level = 1; // volume to decay to (0-63)
+   unsigned char sustain_timer_frac = 1;  // how long to hold sustain (0-255)
+   unsigned char release  =  255;     // ramp-down speed to 0
 
    unsigned char note0 = 0;
    unsigned char note1 = 0;
@@ -113,13 +114,13 @@ void main()
    VERA.data0        = PSG_WAVE_TRIANGLE;
 
    adsr_setAttack(    0, attack);
-   adsr_setDecay(     0, decay, 42);
-   adsr_setSustain(   0, sustain);
+   adsr_setDecay(     0, decay, sustain_level);
+   adsr_setSustain(   0, sustain_timer_frac);
    adsr_setRelease(   0, release);
 
    adsr_setAttack(    1, attack);
-   adsr_setDecay(     1, decay, 42);
-   adsr_setSustain(   1, sustain);
+   adsr_setDecay(     1, decay, sustain_level);
+   adsr_setSustain(   1, sustain_timer_frac);
    adsr_setRelease(   1, release);
 
    adsr_setHandler(ADSR_ON);
@@ -156,6 +157,6 @@ void main()
        loopCount += 2;
 
        // Wait for next note (consistent timing)
-       pause_jiffies(30);
+       pause_jiffies(10);
    }
 }

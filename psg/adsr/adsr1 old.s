@@ -1,7 +1,7 @@
 ; PSG ADSR Envelope Manager 
 ; Author:		Rob Eaglestone
 ;
-; Bigfixed and optimized.
+; This version is bugfixed but unoptimized.
 ;
 ; Adapted from:
 ;    Simplest Sound Effects Library for BASIC Programs
@@ -100,12 +100,12 @@ turn_handler_off:
 ;  	Set Volume and begin ADSR
 ;
 ;	x = voice 	
-;	a = volume (peak volume to reach)
+;	a = volume 
 ;
 ; ------------------------------------------------
 activate_voice:
-	lda #0
 	sta volume,x
+	lda #$ff
 	sta volume_fractional,x
 	lda #2					; State = Attack
 	sta state,x
@@ -150,123 +150,119 @@ set_envelope:
 handler:					
 	lda handler_is_active	
 	beq @inactive
-
-	; 30 Hz: skip every other frame, but double-step each run to keep 60 steps/sec
-	lda frame_counter
-	eor #1
-	sta frame_counter
-	beq @inactive
-	
 	jsr run_states
-	jsr run_states
-	jsr update_volumes
 	jsr update_volumes
 @inactive:
     jmp (default_irq_vector) ; done
 ;----------------------------------------
 
 state_attack:
-	lda attack,y 
-	ora attack_fractional,y 
+	plx       				; pop Voice X
+	lda attack,x 
+	ora attack_fractional,x 
 	beq @state_attack_done  ; attack = 0000
-	lda volume,y
+	lda volume,x
 	cmp #62
 	bcs @state_attack_done  ; volume >= 62 
 	clc
-	lda volume_fractional,y ; not done
-	adc attack_fractional,y ; vol.lo+=
-	sta volume_fractional,y
-	lda volume,y
-	adc attack,y			; vol.hi+=
-	sta volume,y
-	rts
+	lda volume_fractional,x ; not done
+	adc attack_fractional,x ; vol.lo+=
+	sta volume_fractional,x
+	lda volume,x
+	adc attack,x			; vol.hi+=
+@state_attack_update_volume:
+	sta volume,x
+	bra return_from_jump
 @state_attack_done:
 	lda #4
-	sta state,y 
+	sta state,x 
     lda #63
-	sta volume,y
-	rts
+	bra @state_attack_update_volume
 
 state_decay:
-	lda decay,y 
-	ora decay_fractional,y 
+	plx       				; pop Voice X
+	lda decay,x 
+	ora decay_fractional,x 
 	beq @state_decay_done
-	lda volume,y
-	cmp sustain_level,y
+	lda volume,x
+	cmp sustain_level,x
 	bcc @state_decay_done   ; volume < sustain_level
 	sec
-	lda volume_fractional,y ; not done
-	sbc decay_fractional,y  ; vol.lo-=
-	sta volume_fractional,y
-	lda volume,y
-	sbc decay,y				; vol.hi-=
-	sta volume,y
-	rts
+	lda volume_fractional,x ; not done
+	sbc decay_fractional,x  ; vol.lo-=
+	sta volume_fractional,x
+	lda volume,x
+	sbc decay,x				; vol.hi-=
+@state_decay_update_volume:
+	sta volume,x
+	bra return_from_jump 
 @state_decay_done:
 	lda #6
-	sta state,y
-	lda #0
-	sta sustain_counter,y ; set up sustain
-	sta sustain_counter_fractional,y
-    lda sustain_level,y 
-	sta volume,y
-	rts
+	sta state,x 
+	stz sustain_counter,x ; set up sustain
+	stz sustain_counter_fractional,x
+    lda sustain_level,x 
+	bra @state_decay_update_volume
 
 state_idle:
-	rts
+	plx       				; pop Voice X
+	bra return_from_jump
 
 ;------------------------------------------
 ;  Run States
 ;------------------------------------------
 run_states:
     SAVE_VERA_REGISTERS
-	ldy #7
+	ldx #7
 run_states_loop:
-	lda state,y				; get state for voice Y
-	tax						; state index in X
-	jsr @dispatch			; call handler (Y preserved)
-	dey
+	lda state,x
+	phx						; push Voice X
+	tax						; clobber X
+	jmp (envelope_state,x)
+return_from_jump:
+	; X ought to be restored at this point
+	dex
 	bpl run_states_loop
 	RESTORE_VERA_REGISTERS
 	rts
-@dispatch:
-	jmp (envelope_state,x)	; Y=voice, X=state
 
 state_sustain:
-    lda sustain_timer,y 
+	plx       				; pop Voice X
+    lda sustain_timer,x 
 	beq @state_sustain_done ; no timer
-	lda sustain_counter,y
-	cmp sustain_timer,y
+	lda sustain_counter,x
+	cmp sustain_timer,x
 	bcs @state_sustain_done	; sustain_counter >= sustain_timer
-	lda sustain_counter_fractional,y ; not done
-	adc #01							 ; counter.lo++ (C=0 from cmp/bcs)
-	sta sustain_counter_fractional,y
-	lda sustain_counter,y
+	clc
+	lda sustain_counter_fractional,x ; not done
+	adc #01							 ; counter.lo++
+	sta sustain_counter_fractional,x
+	lda sustain_counter,x
 	adc #00							 ; counter.hi += carry
-	sta sustain_counter,y
-	rts
+	sta sustain_counter,x
+	bra return_from_jump 
 @state_sustain_done:
 	lda #8
-	sta state,y 
-	rts 
+	sta state,x 
+	bra return_from_jump 
 
 state_release:
-	lda volume,y
+	plx       				; pop Voice X
+	lda volume,x
 	cmp #4
 	bcc @state_release_done  ; volume < 4
 	sec
-	lda volume_fractional,y  ; not done
-	sbc release_fractional,y ; vol.lo-=
-	sta volume_fractional,y
-	lda volume,y
-	sbc release,y            ; vol.hi-=
-	sta volume,y
-	rts
+	lda volume_fractional,x  ; not done
+	sbc release_fractional,x ; vol.lo-=
+	sta volume_fractional,x
+	lda volume,x
+	sbc release,x            ; vol.hi-=
+	sta volume,x
+	bra return_from_jump 
 @state_release_done:
-	lda #0
-	sta volume,y
-	sta state,y 			 ; idle
-	rts 
+	stz volume,x
+	stz state,x 			 ; idle
+	bra return_from_jump 
 
 ;------------------------------------------
 ;  Update Volumes
@@ -300,7 +296,6 @@ envelope_state: 	.addr state_idle
 					.addr state_release
 
 handler_is_active:	.byte 0		; OFF BY DEFAULT
-frame_counter:		.byte 0		; for 30 Hz gating
 
 sustain_counter:			.res 8,0	; INTERNAL counters
 sustain_counter_fractional:	.res 8,0	;   for sustain timer

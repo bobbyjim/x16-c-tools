@@ -63,8 +63,12 @@ void adsr_setState(unsigned char voice, unsigned char state)
 
 void adsr_setAttack(unsigned char voice, unsigned char level)
 {
-   ADSR_ATTACK_FRACTIONAL[voice] = 0;
-   ADSR_ATTACK[voice]            = level;
+   // Because the upper 3 bits are useless, map Attack like so:
+   // ADSR Attack Bits:   15 14 13 12 11 10 9 8  7 6 5 4 3 2 1 0
+   // level           :             7  6  5 4 3  2 1 0
+   //
+   ADSR_ATTACK[voice]            =  level << 5; // use the top 3 bits
+   ADSR_ATTACK_FRACTIONAL[voice] =  level >> 3; // use the bottom 5 bits
    //cprintf("attack : %u, %u\r\n", ADSR_ATTACK[voice], ADSR_ATTACK_FRACTIONAL[voice]);
 }
 
@@ -78,8 +82,12 @@ void adsr_setDecay(unsigned char voice, unsigned char level, unsigned char susta
 
 void adsr_setSustain(unsigned char voice, unsigned char level)
 {
-   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = 0;
-   ADSR_SUSTAIN_TIMER[voice]            = level;
+   // Because the upper 3 bits are just too huge, map the sustain timer like so:
+   // ADSR Sustain Bits:   15 14 13 12 11 10 9 8  7 6 5 4 3 2 1 0
+   // level            :                  7  6 5  4 3 2 1 0
+   //
+   ADSR_SUSTAIN_TIMER_FRACTIONAL[voice] = level << 3; // use the top 5 bits
+   ADSR_SUSTAIN_TIMER[voice]            = level >> 5; // use the bottom 3 bits
    //cprintf("sustain (%u): %u, %u\r\n", ADSR_SUSTAIN_LEVEL[voice], ADSR_SUSTAIN_TIMER[voice], ADSR_SUSTAIN_TIMER_FRACTIONAL[voice]);
 }
 

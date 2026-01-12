@@ -100,12 +100,12 @@ turn_handler_off:
 ;  	Set Volume and begin ADSR
 ;
 ;	x = voice 	
-;	a = volume (peak volume to reach)
+;	a = volume 
 ;
 ; ------------------------------------------------
 activate_voice:
-	lda #0
 	sta volume,x
+	lda #$ff
 	sta volume_fractional,x
 	lda #2					; State = Attack
 	sta state,x
@@ -150,16 +150,14 @@ set_envelope:
 handler:					
 	lda handler_is_active	
 	beq @inactive
-
-	; 30 Hz: skip every other frame, but double-step each run to keep 60 steps/sec
+	
+	; Run at 30 Hz (every other frame)
 	lda frame_counter
 	eor #1
 	sta frame_counter
 	beq @inactive
 	
 	jsr run_states
-	jsr run_states
-	jsr update_volumes
 	jsr update_volumes
 @inactive:
     jmp (default_irq_vector) ; done
@@ -300,7 +298,7 @@ envelope_state: 	.addr state_idle
 					.addr state_release
 
 handler_is_active:	.byte 0		; OFF BY DEFAULT
-frame_counter:		.byte 0		; for 30 Hz gating
+frame_counter:		.byte 0		; for 30 Hz updates
 
 sustain_counter:			.res 8,0	; INTERNAL counters
 sustain_counter_fractional:	.res 8,0	;   for sustain timer

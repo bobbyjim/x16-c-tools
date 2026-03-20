@@ -33,7 +33,6 @@ char outbuf[256];
 
 void setupScreen()
 {
-   loadFont("petfont.bin");
    bgcolor(COLOR_BLACK);
    textcolor(COLOR_GREEN);
 }

@@ -175,7 +175,7 @@ state_attack:
 	sta volume,y
 	rts
 @state_attack_done:
-	lda #4
+	lda #4					; = DECAY
 	sta state,y 
     lda #63
 	sta volume,y
@@ -197,7 +197,7 @@ state_decay:
 	sta volume,y
 	rts
 @state_decay_done:
-	lda #6
+	lda #6					; = SUSTAIN
 	sta state,y
 	lda #0
 	sta sustain_counter,y ; set up sustain
@@ -239,7 +239,7 @@ state_sustain:
 	sta sustain_counter,y
 	rts
 @state_sustain_done:
-	lda #8
+	lda #8							; = RELEASE
 	sta state,y 
 	rts 
 
@@ -256,7 +256,7 @@ state_release:
 	sta volume,y
 	rts
 @state_release_done:
-	lda #0
+	lda #0					; = ATTACK
 	sta volume,y
 	sta state,y 			 ; idle
 	rts 

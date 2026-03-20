@@ -1,9 +1,11 @@
 mkdir lib 2>/dev/null
-ar65 r lib/spritex16.lib .obj/sprite.o
-ar65 r lib/psgx16.lib    .obj/PSG.o
-ar65 r lib/mathx16.lib   .obj/math.o
-ar65 r lib/timerx16.lib  .obj/timer.o
-ar65 r lib/utextx16.lib  .obj/utext.o
-ar65 r lib/fontx16.lib   .obj/font.o
+ar65 r lib/spritex16.lib    .obj/sprite.o
+ar65 r lib/psgx16.lib       .obj/PSG.o
+ar65 r lib/mathx16.lib      .obj/math.o
+ar65 r lib/timerx16.lib     .obj/timer.o
+ar65 r lib/utextx16.lib     .obj/utext.o
+ar65 r lib/fontx16.lib      .obj/font.o
+$(MAKE) -C inventory lib-x16
+ar65 r lib/inventoryx16.lib inventory/.obj/inventory.o
 mkdir include 2>/dev/null
 cp *.h include

@@ -5,9 +5,6 @@ Programming tools for the X16
 
 The object files are bundled into several libraries, and the header files are copied into /include.
 
-# fontx16.lib (font.h)
-A handy method for changing the character "ROM" image in VERA.
-
 # mathx16.lib
 1. Burtle's PRNG (two versions) (burtle2.h)
 2. A cheap square-root function (math.h)

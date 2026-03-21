@@ -1,0 +1,4 @@
+name: text.petscii7
+version: 1.0.0
+description: A PETSCII 7-bit CODEC for the Commander X16.
+type: library

@@ -1,0 +1,4 @@
+name: graphics.pixobject
+version: 1.0.0
+description: An ASCII-to-pixels format and converter for the Commander X16.
+type: tool

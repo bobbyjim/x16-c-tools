@@ -1,0 +1,4 @@
+name: audio.adsr
+version: 1.0.0
+description: An ADSR envelope generator for audio applications.
+type: library

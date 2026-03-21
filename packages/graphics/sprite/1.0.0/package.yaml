@@ -1,0 +1,4 @@
+name: graphics.sprite
+version: 1.0.0
+description: A sprite management library for the Commander X16.
+type: hybrid

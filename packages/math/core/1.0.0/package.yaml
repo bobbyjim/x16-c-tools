@@ -1,0 +1,4 @@
+name: math.core
+version: 1.0.0
+description: Core mathematical utilities for the Commander X16.
+type: library

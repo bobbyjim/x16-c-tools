@@ -1,0 +1,4 @@
+name: game.inventory
+version: 1.0.0
+description: A simple inventory system for games, allowing players to manage items.
+type: library

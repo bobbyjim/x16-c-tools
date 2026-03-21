@@ -2,3 +2,4 @@ name: text.utext
 version: 1.0.0
 description: A 5-bit text encoding format and converter for the Commander X16, designed for compact storage of text data.
 type: hybrid
+deps: []

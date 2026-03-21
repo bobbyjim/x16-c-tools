@@ -2,3 +2,4 @@ name: system.timer
 version: 1.0.0
 description: A pause function using the X16's build-in jiffy clock.
 type: library
+deps: []

@@ -2,3 +2,4 @@ name: audio.psg
 version: 1.0.0
 description: An API for the X16 Programmable Sound Generator.
 type: library
+deps: []

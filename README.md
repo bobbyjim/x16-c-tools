@@ -6,7 +6,7 @@ The x16-c-packages repository is organized into packages, each containing a libr
 
     name: text.utext
 	version: 1.0.0
-	type: hybrid
+	type: hybrid (or library, tool, asset)
 
 ## Package types
 

@@ -7,7 +7,6 @@
 #include "sprite.h"
 #include "PSG.h"
 #include "timer.h"
-#include "font.h"
 #include "math.h"
 #include "utext.h"
 

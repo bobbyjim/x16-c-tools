@@ -1,4 +1,4 @@
-SOURCES = main.c sprite.c PSG.c timer.c font.c math.c utext.c
+SOURCES = main.c sprite.c PSG.c timer.c math.c utext.c
 
 PROGRAM = MAIN
 

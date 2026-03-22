@@ -1,0 +1,5 @@
+name: banner
+version: 1.0.0
+description: An assembly language program for showing a banner on the screen.
+type: assembly
+deps: []

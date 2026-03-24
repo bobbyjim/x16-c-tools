@@ -59,7 +59,7 @@ foreach my $file (@files) {
 	$path =~ s/\./\//g;
 	$path = $root . '/' . $path . '/' . $data->{version} . '/package.yaml';
 	unless ($file eq $path) {
-		say "ERROR: $file path does not match name and version";
+		say "ERROR: $file path does not match name and version:\n       $path";
 		next;
 	}
 
@@ -76,16 +76,18 @@ foreach my $file (@files) {
 		version => $data->{version},
 		file => $file,
 		deps => $deps,
+		description => $data->{description} || '',
 	};
 }
 
 my @errors = ();
 
-say "Package Name         Version  File Path";
-say "-------------------- -------- --------------------------------------------";
+say "Package Name         Version  Description";
+say "-------------------- -------- ------------------------------------------------------";
 foreach my $name (sort keys %registry) {
 	my $entry = $registry{$name};
-	printf "%-20s %-8s %s\n", $name, $entry->{version}, $entry->{file};
+	my $description_trunc = length($entry->{description} || '') > 50 ? substr($entry->{description}, 0, 47) . '...' : $entry->{description} || '';
+	printf "%-20s %-8s %s\n", $name, $entry->{version}, $description_trunc;
 
 	for my $dep (@{$registry{$name}->{deps} || []}) {
 		unless (exists $registry{$dep}) {
@@ -99,6 +101,12 @@ if (@errors) {
 	say $_ for @errors;
 	exit 1;
 } else {
-	say "\nAll packages are valid.";
+	say "\n";
+	say " *******************************";
+	say " *                             *";
+	say " *   All packages are valid!   *";
+	say " *                             *";
+	say " *******************************\n\n";
+
 	exit 0;
 }

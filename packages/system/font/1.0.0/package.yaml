@@ -1,0 +1,4 @@
+name: system.font
+version: 1.0.0
+description: A package for setting the X16's font.
+deps: []

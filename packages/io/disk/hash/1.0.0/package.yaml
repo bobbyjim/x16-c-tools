@@ -1,5 +1,5 @@
 name: io.disk.hash
 version: 1.0.0
-description: Leveraging the file system as a slow hash table.
+description: File system hashtable.
 type: library
 deps: []

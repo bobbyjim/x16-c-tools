@@ -1,5 +1,5 @@
 name: audio.psg
 version: 1.0.0
-description: An API for the X16 Programmable Sound Generator.
+description: X16 PSG API.
 type: library
 deps: []

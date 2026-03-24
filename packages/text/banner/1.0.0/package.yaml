@@ -1,5 +1,5 @@
 name: text.banner
 version: 1.0.0
-description: An assembly language program for showing a banner on the screen.
+description: X16 banner in asm.
 type: assembly
 deps: []

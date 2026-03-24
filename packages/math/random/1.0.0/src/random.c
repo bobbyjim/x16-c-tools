@@ -2,9 +2,9 @@
 //  This variant is based on:
 //  https://www.pcg-random.org/posts/bob-jenkins-small-prng-passes-practrand.html#
 //
-//  cl65 -O -t cx16 burtle.c
+//  cl65 -O -t cx16 random.c
 //
-#include "burtle2.h"
+#include "random.h"
 
 ranctx2 burtle;
 

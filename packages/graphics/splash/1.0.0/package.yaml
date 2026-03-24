@@ -1,5 +1,5 @@
 name: graphics.splash
 version: 1.0.0
-description: A fake-security splash screen for the Commander X16, used for fun and testing purposes.
+description: Retro X16 splash screen.
 type: library
 deps: []

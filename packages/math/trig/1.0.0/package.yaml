@@ -1,5 +1,5 @@
 name: math.trig
 version: 1.0.0
-description: A trigonometry library for the Commander X16, providing sine, cosine, and arctangent.
+description: Basic trig API.
 type: hybrid
 deps: []

@@ -1,5 +1,5 @@
 name: math.random
 version: 1.0.0
-description: A simple random number generator for the Commander X16.
+description: Burtle's simple RNG.
 type: library
 deps: []

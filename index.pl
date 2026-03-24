@@ -82,12 +82,16 @@ foreach my $file (@files) {
 
 my @errors = ();
 
-say "Package Name         Version  Description";
-say "-------------------- -------- ------------------------------------------------------";
+say "Package Name            Ver. Dependencies         Description";
+say "--------------------------- -------------------- ------------------------------------------------------";
 foreach my $name (sort keys %registry) {
 	my $entry = $registry{$name};
+
+    my ($version_trunc) = $entry->{version} =~ /^(\d+\.\d+)/;
+	my $name_version =sprintf("%-21s %5s", $name, $version_trunc);
 	my $description_trunc = length($entry->{description} || '') > 50 ? substr($entry->{description}, 0, 47) . '...' : $entry->{description} || '';
-	printf "%-20s %-8s %s\n", $name, $entry->{version}, $description_trunc;
+	my $deps_str = @{$entry->{deps} || []} ? join(', ', @{$entry->{deps}}) : '-';
+	printf "%-20s %-20s %s\n", $name_version, $deps_str, $description_trunc;
 
 	for my $dep (@{$registry{$name}->{deps} || []}) {
 		unless (exists $registry{$dep}) {

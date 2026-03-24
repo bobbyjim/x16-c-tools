@@ -29,3 +29,32 @@ data/raw/       (raw data)
 data/c/         (C data)
 data/x16/       (X16 data)
 ```
+
+## Installing packages into another project
+
+Use the installer script in this repository to vendor a package into another
+project while preserving the package layout:
+
+```sh
+perl /path/to/x16-pack/scripts/install-package.pl --project /path/to/your-game audio.adsr
+```
+
+That copies the package into the consuming project's `packages/` tree:
+
+```text
+/path/to/your-game/packages/audio/adsr/1.0.0/
+```
+
+Dependencies listed in `package.yaml` are installed first. A version can be
+requested explicitly with `name@version`:
+
+```sh
+perl /path/to/x16-pack/scripts/install-package.pl --project . graphics.sprite
+perl /path/to/x16-pack/scripts/install-package.pl --project . audio.adsr@1.0.0
+```
+
+Useful flags:
+
+- `--dry-run` shows what would be copied.
+- `--force` reinstalls a package if that version is already present.
+- `--include-tests` copies `test/` directories too.

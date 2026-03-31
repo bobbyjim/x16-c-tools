@@ -1,5 +1,4 @@
 #include <stdlib.h>
-#include <stdio.h>
 #include "name.h"
 
 char *adjective[] = {
@@ -65,10 +64,14 @@ char *noun[] = {
 
 char* generateName(char* out)
 {
-    sprintf(out, "%s_%s", 
-       adjective[ rand() % NAME_ADJECTIVE_COUNT ],
-       noun[ rand() % NAME_NOUN_COUNT ]
-    );
+    const char* adj = adjective[ rand() % NAME_ADJECTIVE_COUNT ];
+    const char* nn  = noun[ rand() % NAME_NOUN_COUNT ];
+    char* p = out;
+
+    while (*adj) *p++ = *adj++;
+    *p++ = '_';
+    while (*nn)  *p++ = *nn++;
+    *p = '\0';
 
     return out;
 }

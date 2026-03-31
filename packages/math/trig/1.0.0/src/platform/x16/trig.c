@@ -25,7 +25,7 @@
 
 #define        TRIG_TABLE       ((unsigned char*)(0x0400))
 
-int sin(int pseudoDegrees)
+int trig_sin(int pseudoDegrees)
 {
     pseudoDegrees %= 256;
     if (pseudoDegrees < 128)
@@ -34,16 +34,16 @@ int sin(int pseudoDegrees)
         return -(TRIG_TABLE[ pseudoDegrees ] & 127);
 }
 
-int cos(int pseudoDegrees)
+int trig_cos(int pseudoDegrees)
 {
-    return sin(pseudoDegrees + 64);
+    return trig_sin(pseudoDegrees + 64);
 }
 
 /*
-    atan: pass in an int, and I'll return the pseudoDegrees.
+    trig_atan: pass in an int, and I'll return the pseudoDegrees.
     And it's going to be super coarse.
 */
-int atan(int x)
+int trig_atan(int x)
 {
     if (x<-100) return -64; // close enuf
     if (x>100)  return  64; // close enuf

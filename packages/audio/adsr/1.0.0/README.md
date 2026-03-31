@@ -4,14 +4,14 @@ A high-performance ADSR (Attack, Decay, Sustain, Release) envelope generator for
 
 # BUILDING
 
-     cl65 -t cx16 adsr1.s -C cx16-asm.cfg -o ADSR1.PRG
+    cl65 -t cx16 src/platform/x16/adsr1.s -C cx16-asm.cfg -o ADSR1.PRG
 
 ## Embedding Guide (Quick Start)
 
 Use this checklist to embed the ADSR library into your project:
 
 1. Place `ADSR1.PRG` on device 8 (the C API loads from dev 8).
-2. Add `ADSR.c` and `ADSR.h` to your build, and include them in your C sources.
+2. Add `src/platform/x16/ADSR.c` and `include/ADSR.h` to your build, and include the header in your C sources.
 3. On startup, call `adsr_install();` then `adsr_setHandler(ADSR_ON);`.
 4. Configure VERA PSG voice registers (frequency, L/R volume bits, waveform).
 5. Set per-voice ADSR parameters:
@@ -86,8 +86,8 @@ void main() {
 ### Files Required:
 
 - `ADSR1.PRG` - The compiled assembly library (must be on disk 8)
-- `ADSR.h` - C header file
-- `ADSR.c` - C wrapper functions
+- `include/ADSR.h` - C header file
+- `src/platform/x16/ADSR.c` - C wrapper functions
 - `timer.h` / `timer.c` - Timing utilities
 
 Optional (examples/tests):

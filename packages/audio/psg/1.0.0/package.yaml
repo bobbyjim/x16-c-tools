@@ -2,4 +2,4 @@ name: audio.psg
 version: 1.0.0
 description: X16 PSG API.
 type: library
-deps: []
+deps: [system.timer@1.0.0]

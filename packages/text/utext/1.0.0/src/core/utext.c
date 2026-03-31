@@ -1,7 +1,3 @@
-#include <stdio.h>
-#include <string.h>
-#include <peekpoke.h>
-
 #include "utext.h"
 
 /*
@@ -38,16 +34,18 @@ void decodeUbyte(unsigned char b, char* outbuf)
    }
 }
 
-char* decodeUtext(unsigned startLoc, char* outbuf)
+char* decodeUtext(const unsigned char* inbuf, char* outbuf)
 {
+   const unsigned char* p = inbuf;
+
    b5 = 0;
    outbufpos = 0;
    zcase = 0;
 
-   for(; b5 == 0; startLoc += 2)
+   for(; b5 == 0; p += 2)
    {
-      b0 = PEEK(startLoc);
-      b1 = PEEK(startLoc+1);
+      b0 = p[0];
+      b1 = p[1];
 
       b2 = b0 & 31;
       b3 = (b0/32) + (b1 & 3)*8;
@@ -63,31 +61,9 @@ char* decodeUtext(unsigned startLoc, char* outbuf)
    return outbuf;
 }
 
-char* decodeUtextbuf(unsigned char *buf, char* outbuf)
+char* decodeUtextbuf(const unsigned char* buf, char* outbuf)
 {
-   unsigned char loc;
-   outbufpos = 0; // used by decodeUbyte
-   zcase = 0;     // used by decodeUbyte
-
-   for(loc=0; loc<strlen(buf); loc += 2)
-   {
-      b0 = buf[loc];
-      b1 = buf[loc+1];
-
-      b2 = b0 & 31;
-      b3 = (b0/32) + (b1 & 3)*8;
-      b4 = (b1 & 127)/4;
-      b5 = (b1/128);
-
-      decodeUbyte(b2, outbuf);
-      decodeUbyte(b3, outbuf);
-      decodeUbyte(b4, outbuf);
-
-      if (b5 == 1) break;
-   }
-
-   outbuf[outbufpos] = 0; // terminate string
-   return outbuf;
+   return decodeUtext(buf, outbuf);
 }
 
 typedef struct {

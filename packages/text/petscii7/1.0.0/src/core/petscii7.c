@@ -24,7 +24,7 @@ char toPetscii(unsigned char c)
 //
 //  Convert a printable char to a byte value
 //
-unsigned char to7bitCode(char c)
+unsigned char to7bitCode(unsigned char c)
 {
     if (c > 32   && c < 128) return c - 33;
     if (c > 159  && c < 193) return c - 65;

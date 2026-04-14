@@ -1,0 +1,5 @@
+name: game.auth
+version: 1.0.0
+description: Fake interactive authentication challenge. Generates a six-digit code, displays it, prompts the user to type it back, and verifies the response.
+type: library
+deps: []
